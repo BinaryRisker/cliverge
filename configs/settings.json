@@ -1,0 +1,21 @@
+{
+  "appearance": {
+    "theme": "dark",
+    "font_size": 14.0,
+    "window_size": [1200.0, 800.0]
+  },
+  "behavior": {
+    "auto_check_updates": true,
+    "check_interval_minutes": 30,
+    "show_notifications": true
+  },
+  "paths": {
+    "tools_config_path": "tools.json",
+    "data_directory": "~/.cliverge"
+  },
+  "version_check": {
+    "default_strategy": "auto",
+    "auto_check_on_startup": true,
+    "check_interval_hours": 24
+  }
+}

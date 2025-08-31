@@ -10,21 +10,17 @@ winapi = { version = "0.3", features = ["wincon", "winuser", "consoleapi"] }
 
 [dependencies]
 cliverge-core = { path = "../cliverge-core" }
-cliverge-tools = { path = "../cliverge-tools" }
-cliverge-sdk = { path = "../cliverge-sdk" }
 eframe = "0.24"
 egui = "0.24"
-tokio = { version = "1.0", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tracing = "0.1"
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
 tracing-subscriber = "0.3"
-anyhow = "1.0"
-image = "0.24"
-chrono = { version = "0.4", features = ["serde"] }
-dirs = "5.0"
-reqwest = { version = "0.11", features = ["json"] }
+dirs = { workspace = true }
+chrono = { workspace = true }
 webbrowser = "0.8"
+image = "0.24"
 
 [[bin]]
 name = "cliverge-gui"

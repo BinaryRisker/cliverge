@@ -1,0 +1,536 @@
+{
+  "version": "1.0",
+  "last_updated": "2024-12-31T08:00:00Z",
+  "tools": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code CLI",
+      "description": "Anthropic Claude AI Code Assistant - Generate, explain and optimize code",
+      "website": "https://www.anthropic.com/claude",
+      "command": "claude",
+      "version_check": ["--version"],
+      "update_check": ["claude", "update", "--check-only"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@anthropic-ai/claude-cli"],
+          "package_name": "@anthropic-ai/claude-cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "claude-cli"],
+          "package_name": "claude-cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@anthropic-ai/claude-cli"],
+          "package_name": "@anthropic-ai/claude-cli"
+        }
+      },
+      "config_schema": {
+        "api_key": {
+          "field_type": "string",
+          "secret": true,
+          "required": true,
+          "description": "Anthropic API Key"
+        },
+        "model": {
+          "field_type": "enum",
+          "values": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
+          "default": "claude-3-sonnet",
+          "description": "Claude model to use"
+        }
+      }
+    },
+    {
+      "id": "gemini-cli",
+      "name": "Gemini CLI",
+      "description": "Google Gemini AI Assistant - Multimodal AI for text and code",
+      "website": "https://ai.google.dev/",
+      "command": "gemini",
+      "version_check": ["--version"],
+      "update_check": ["gemini", "update", "--check"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@google-ai/gemini-cli"],
+          "package_name": "@google-ai/gemini-cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "gemini-cli"],
+          "package_name": "gemini-cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@google-ai/gemini-cli"],
+          "package_name": "@google-ai/gemini-cli"
+        }
+      },
+      "config_schema": {
+        "api_key": {
+          "field_type": "string",
+          "secret": true,
+          "required": true,
+          "description": "Google AI API Key"
+        },
+        "model": {
+          "field_type": "enum",
+          "values": ["gemini-pro", "gemini-pro-vision"],
+          "default": "gemini-pro",
+          "description": "Gemini model to use"
+        }
+      }
+    },
+    {
+      "id": "qwen-code-cli",
+      "name": "Qwen Code CLI",
+      "description": "Alibaba Qwen Code Assistant - Chinese-friendly AI programming tool",
+      "website": "https://qwen.alibaba.com/",
+      "command": "qwen-code",
+      "version_check": ["--version"],
+      "update_check": ["qwen-code", "check-update"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@alicloud/qwen-code-cli"],
+          "package_name": "@alicloud/qwen-code-cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "qwen-code-cli"],
+          "package_name": "qwen-code-cli"
+        },
+        "linux": {
+          "method": "pip",
+          "command": ["pip", "install", "qwen-code-cli"],
+          "package_name": "qwen-code-cli"
+        }
+      },
+      "config_schema": {
+        "api_key": {
+          "field_type": "string",
+          "secret": true,
+          "required": true,
+          "description": "Qwen API Key"
+        },
+        "region": {
+          "field_type": "enum",
+          "values": ["cn-hangzhou", "ap-southeast-1", "us-east-1"],
+          "default": "cn-hangzhou",
+          "description": "API region"
+        }
+      }
+    },
+    {
+      "id": "openai-cli",
+      "name": "OpenAI CLI",
+      "description": "OpenAI official command line tool",
+      "website": "https://platform.openai.com/",
+      "command": "openai",
+      "version_check": ["--version"],
+      "update_check": ["openai", "update", "--check"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "openai-cli"],
+          "package_name": "openai-cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "openai-cli"],
+          "package_name": "openai-cli"
+        },
+        "linux": {
+          "method": "pip",
+          "command": ["pip", "install", "openai-cli"],
+          "package_name": "openai-cli"
+        }
+      },
+      "config_schema": {
+        "api_key": {
+          "field_type": "string",
+          "secret": true,
+          "required": true,
+          "description": "OpenAI API Key"
+        },
+        "organization": {
+          "field_type": "string",
+          "required": false,
+          "description": "OpenAI Organization ID"
+        }
+      }
+    },
+    {
+      "id": "github-copilot-cli",
+      "name": "GitHub Copilot CLI",
+      "description": "GitHub Copilot command line interface",
+      "website": "https://github.com/features/copilot",
+      "command": "gh",
+      "version_check": ["copilot", "--version"],
+      "update_check": ["extension", "upgrade", "copilot"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["gh", "extension", "install", "github/gh-copilot"],
+          "package_name": "github/gh-copilot"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["gh", "extension", "install", "github/gh-copilot"],
+          "package_name": "github/gh-copilot"
+        },
+        "linux": {
+          "method": "script",
+          "command": ["gh", "extension", "install", "github/gh-copilot"],
+          "package_name": "github/gh-copilot"
+        }
+      },
+      "config_schema": {
+        "github_token": {
+          "field_type": "string",
+          "secret": true,
+          "required": true,
+          "description": "GitHub Personal Access Token"
+        }
+      }
+    },
+    {
+      "id": "cursor-cli",
+      "name": "Cursor CLI",
+      "description": "Cursor editor command line tools",
+      "website": "https://cursor.sh/",
+      "command": "cursor",
+      "version_check": ["--version"],
+      "update_check": ["--check-for-update"],
+      "install": {
+        "windows": {
+          "method": "script",
+          "url": "https://cursor.sh/install.ps1"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "--cask", "cursor"],
+          "package_name": "cursor"
+        },
+        "linux": {
+          "method": "script",
+          "url": "https://cursor.sh/install.sh"
+        }
+      },
+      "config_schema": {
+        "api_key": {
+          "field_type": "string",
+          "secret": true,
+          "required": false,
+          "description": "Cursor API Key (optional)"
+        }
+      }
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode CLI",
+      "description": "Open source code analysis and generation tool",
+      "website": "https://github.com/opencode/cli",
+      "command": "opencode",
+      "version_check": ["--version"],
+      "update_check": ["opencode", "update", "--check"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@opencode/cli"],
+          "package_name": "@opencode/cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "opencode"],
+          "package_name": "opencode"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@opencode/cli"],
+          "package_name": "@opencode/cli"
+        }
+      },
+      "config_schema": {
+        "api_key": {
+          "field_type": "string",
+          "secret": true,
+          "required": false,
+          "description": "OpenCode API Key (optional)"
+        }
+      }
+    },
+    {
+      "id": "universal-ai-cli",
+      "name": "Universal AI CLI",
+      "description": "Universal interface for multiple AI providers",
+      "website": "https://github.com/universal-ai/cli",
+      "command": "uai",
+      "version_check": ["--version"],
+      "update_check": ["update", "--check"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "universal-ai-cli"],
+          "package_name": "universal-ai-cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "universal-ai-cli"],
+          "package_name": "universal-ai-cli"
+        },
+        "linux": {
+          "method": "pip",
+          "command": ["pip", "install", "universal-ai-cli"],
+          "package_name": "universal-ai-cli"
+        }
+      },
+      "config_schema": {
+        "default_provider": {
+          "field_type": "enum",
+          "values": ["openai", "anthropic", "google", "azure"],
+          "default": "openai",
+          "description": "Default AI provider"
+        },
+        "providers": {
+          "field_type": "object",
+          "required": true,
+          "description": "Provider configurations"
+        }
+      }
+    },
+    {
+      "id": "crush",
+      "name": "Crush CLI",
+      "description": "File compression and optimization tool",
+      "website": "https://github.com/crush/cli",
+      "command": "crush",
+      "version_check": ["--version"],
+      "update_check": ["--check-update"],
+      "install": {
+        "windows": {
+          "method": "winget",
+          "command": ["winget", "install", "crush"],
+          "package_name": "crush"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "crush"],
+          "package_name": "crush"
+        },
+        "linux": {
+          "method": "script",
+          "url": "https://github.com/crush/cli/releases/latest/download/install.sh"
+        }
+      },
+      "config_schema": {
+        "compression_level": {
+          "field_type": "number",
+          "default": 6,
+          "description": "Default compression level (1-9)"
+        }
+      }
+    },
+    {
+      "id": "iflow-cli",
+      "name": "iFlow CLI",
+      "description": "Intelligent workflow automation tool",
+      "website": "https://iflow.dev/",
+      "command": "iflow",
+      "version_check": ["--version"],
+      "update_check": ["update", "--check"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@iflow/cli"],
+          "package_name": "@iflow/cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "iflow-cli"],
+          "package_name": "iflow-cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@iflow/cli"],
+          "package_name": "@iflow/cli"
+        }
+      },
+      "config_schema": {
+        "workspace": {
+          "field_type": "string",
+          "required": false,
+          "description": "Default workspace directory"
+        },
+        "auto_sync": {
+          "field_type": "boolean",
+          "default": true,
+          "description": "Auto sync workflows"
+        }
+      }
+    },
+    {
+      "id": "grok-cli",
+      "name": "Grok CLI",
+      "description": "Grok AI assistant command line interface",
+      "website": "https://grok.x.ai/",
+      "command": "grok",
+      "version_check": ["--version"],
+      "update_check": ["update", "--check"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@x-ai/grok-cli"],
+          "package_name": "@x-ai/grok-cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "grok-cli"],
+          "package_name": "grok-cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@x-ai/grok-cli"],
+          "package_name": "@x-ai/grok-cli"
+        }
+      },
+      "config_schema": {
+        "api_key": {
+          "field_type": "string",
+          "secret": true,
+          "required": true,
+          "description": "Grok API Key"
+        },
+        "model": {
+          "field_type": "enum",
+          "values": ["grok-1", "grok-1.5", "grok-2"],
+          "default": "grok-1.5",
+          "description": "Grok model version"
+        }
+      }
+    },
+    {
+      "id": "cloudbase",
+      "name": "CloudBase CLI",
+      "description": "Tencent CloudBase serverless platform CLI",
+      "website": "https://cloudbase.net/",
+      "command": "cloudbase",
+      "version_check": ["--version"],
+      "update_check": ["update", "--check"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@cloudbase/cli"],
+          "package_name": "@cloudbase/cli"
+        },
+        "macos": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@cloudbase/cli"],
+          "package_name": "@cloudbase/cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@cloudbase/cli"],
+          "package_name": "@cloudbase/cli"
+        }
+      },
+      "config_schema": {
+        "secret_id": {
+          "field_type": "string",
+          "secret": true,
+          "required": true,
+          "description": "Tencent Cloud Secret ID"
+        },
+        "secret_key": {
+          "field_type": "string",
+          "secret": true,
+          "required": true,
+          "description": "Tencent Cloud Secret Key"
+        },
+        "env_id": {
+          "field_type": "string",
+          "required": false,
+          "description": "Default environment ID"
+        }
+      }
+    },
+    {
+      "id": "rock-dev",
+      "name": "Rock Dev CLI",
+      "description": "Rock development framework CLI tool",
+      "website": "https://rockdev.io/",
+      "command": "rock",
+      "version_check": ["--version"],
+      "update_check": ["update", "--check"],
+      "install": {
+        "windows": {
+          "method": "winget",
+          "command": ["winget", "install", "rock-dev"],
+          "package_name": "rock-dev"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "rock-dev"],
+          "package_name": "rock-dev"
+        },
+        "linux": {
+          "method": "script",
+          "url": "https://install.rockdev.io/install.sh"
+        }
+      },
+      "config_schema": {
+        "project_type": {
+          "field_type": "enum",
+          "values": ["web", "api", "mobile", "desktop"],
+          "default": "web",
+          "description": "Default project type"
+        },
+        "template_repo": {
+          "field_type": "string",
+          "required": false,
+          "description": "Custom template repository"
+        }
+      }
+    },
+    {
+      "id": "cursh",
+      "name": "Cursh CLI",
+      "description": "Cursor shell integration and productivity tool",
+      "website": "https://github.com/cursh/cli",
+      "command": "cursh",
+      "version_check": ["--version"],
+      "update_check": ["--check-update"],
+      "install": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "install", "-g", "cursh-cli"],
+          "package_name": "cursh-cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "cursh"],
+          "package_name": "cursh"
+        },
+        "linux": {
+          "method": "cargo",
+          "command": ["cargo", "install", "cursh"],
+          "package_name": "cursh"
+        }
+      },
+      "config_schema": {
+        "editor": {
+          "field_type": "enum",
+          "values": ["cursor", "vscode", "vim", "nano"],
+          "default": "cursor",
+          "description": "Preferred editor"
+        },
+        "shell_integration": {
+          "field_type": "boolean",
+          "default": true,
+          "description": "Enable shell integration"
+        }
+      }
+    }
+  ]
+}
