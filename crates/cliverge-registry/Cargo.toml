@@ -1,0 +1,11 @@
+[package]
+name = "cliverge-registry"
+version = "0.1.0"
+edition = "2021"
+description = "Registry client for CLIverge"
+[dependencies]
+cliverge-core = { path = "../cliverge-core" }
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+

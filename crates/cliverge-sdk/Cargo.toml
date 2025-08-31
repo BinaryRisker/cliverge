@@ -1,0 +1,15 @@
+[package]
+name = "cliverge-sdk"
+version = "0.1.0"
+edition = "2021"
+description = "SDK for developing CLIverge plugins"
+
+[dependencies]
+cliverge-core = { path = "../cliverge-core" }
+async-trait = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+reqwest = "0.11"
+

@@ -1,0 +1,11 @@
+[package]
+name = "cliverge-tools"
+version = "0.1.0"
+edition = "2021"
+description = "Built-in tool adapters for CLIverge"
+[dependencies]
+cliverge-sdk = { path = "../cliverge-sdk" }
+async-trait = "0.1"
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+

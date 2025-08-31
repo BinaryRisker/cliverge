@@ -1,0 +1,112 @@
+# Rust Build Artifacts
+/target/
+**/target/
+Cargo.lock
+**/*.rs.bk
+**/*.pdb
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+*.tmp
+*.temp
+*.log
+*.cache
+
+# Local Configuration
+/config.toml
+/.cliverge/
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime Data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Distribution / Build
+/dist/
+/release/
+/build/
+/out/
+
+# Documentation Build
+/doc/
+/docs/build/
+
+# Temporary Files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Backup Files
+*.bak
+*.backup
+
+# Test Coverage
+coverage/
+*.profraw
+*.profdata
+
+# Security Files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Package Manager
+node_modules/
+yarn.lock
+package-lock.json
+
+# Rust-specific
+**/*.orig
+*.rs.bk
+rust-project.json
+
+# Cargo dist
+/dist/
+
+# Local development
+/.local/
+/tmp/
+/temp/

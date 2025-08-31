@@ -1,0 +1,32 @@
+[package]
+name = "cliverge-gui"
+version = "0.1.0"
+edition = "2021"
+description = "GUI interface for CLIverge"
+
+# Hide console window on Windows
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["wincon", "winuser", "consoleapi"] }
+
+[dependencies]
+cliverge-core = { path = "../cliverge-core" }
+cliverge-tools = { path = "../cliverge-tools" }
+cliverge-sdk = { path = "../cliverge-sdk" }
+eframe = "0.24"
+egui = "0.24"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+anyhow = "1.0"
+image = "0.24"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5.0"
+reqwest = { version = "0.11", features = ["json"] }
+webbrowser = "0.8"
+
+[[bin]]
+name = "cliverge-gui"
+path = "src/main.rs"
+

@@ -1,0 +1,10 @@
+[package]
+name = "cliverge-ui"
+version = "0.1.0"
+edition = "2021"
+description = "Shared UI components for CLIverge"
+[dependencies]
+cliverge-core = { path = "../cliverge-core" }
+ratatui = "0.24"
+crossterm = { version = "0.27", features = ["event-stream"] }
+
