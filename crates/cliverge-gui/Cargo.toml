@@ -1,5 +1,5 @@
 [package]
-name = "cliverge-gui"
+name = "cliverge"
 version = "0.1.0"
 edition = "2021"
 description = "GUI interface for CLIverge"
@@ -23,6 +23,6 @@ webbrowser = "0.8"
 image = "0.24"
 
 [[bin]]
-name = "cliverge-gui"
+name = "cliverge"
 path = "src/main.rs"
 

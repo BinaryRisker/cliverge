@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Core engine and business logic for CLIverge"
 [dependencies]
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["process"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

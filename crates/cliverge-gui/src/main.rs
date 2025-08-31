@@ -4,24 +4,6 @@
 mod app;
 
 use app::CLIvergeApp;
-use eframe::egui;
-
-fn setup_fonts(ctx: &egui::Context) {
-    let mut style = (*ctx.style()).clone();
-    
-    style.text_styles = [
-        (egui::TextStyle::Heading, egui::FontId::new(22.0, egui::FontFamily::Proportional)),
-        (egui::TextStyle::Body, egui::FontId::new(15.0, egui::FontFamily::Proportional)),
-        (egui::TextStyle::Monospace, egui::FontId::new(14.0, egui::FontFamily::Monospace)),
-        (egui::TextStyle::Button, egui::FontId::new(15.0, egui::FontFamily::Proportional)),
-        (egui::TextStyle::Small, egui::FontId::new(13.0, egui::FontFamily::Proportional)),
-    ]
-    .iter()
-    .cloned()
-    .collect();
-    
-    ctx.set_style(style);
-}
 
 fn main() -> Result<(), eframe::Error> {
     // Initialize logging
@@ -58,8 +40,7 @@ fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
         "CLIverge - AI CLI Tool Manager",
         options,
-        Box::new(|cc| {
-            setup_fonts(&cc.egui_ctx);
+        Box::new(|_cc| {
             Box::new(CLIvergeApp::new())
         }),
     )

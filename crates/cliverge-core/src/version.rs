@@ -7,8 +7,6 @@ use std::path::PathBuf;
 use tokio::process::Command;
 use tracing::{debug, error, warn};
 
-#[cfg(windows)]
-use std::os::windows::process::CommandExt;
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

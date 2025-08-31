@@ -7,8 +7,6 @@ use std::sync::{Arc, Mutex};
 use tokio::process::Command;
 use tracing::{debug, warn};
 
-#[cfg(windows)]
-use std::os::windows::process::CommandExt;
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -296,7 +294,7 @@ impl ToolManager {
         Ok(output)
     }
 
-    /// Check for version updates
+    /// Check for version updates with upgrade information
     pub async fn check_version_updates(&self, tool_id: &str, strategy: VersionCheckStrategy) -> Result<VersionInfo, ToolError> {
         let tool_config = {
             let config_manager = self.config_manager.lock().unwrap();
@@ -307,6 +305,76 @@ impl ToolManager {
         };
 
         self.version_checker.check_version(&tool_config, strategy).await
+    }
+
+    /// Check if updates are available for a tool
+    pub async fn has_updates_available(&self, tool_id: &str) -> Result<bool, ToolError> {
+        let version_info = self.check_version_updates(tool_id, VersionCheckStrategy::Auto).await?;
+        
+        // Compare current version with latest version
+        if let (Some(current), Some(latest)) = (&version_info.current, &version_info.latest) {
+            Ok(Self::compare_versions(current, latest) == std::cmp::Ordering::Less)
+        } else {
+            Ok(false)
+        }
+    }
+
+    /// Get help information for a tool
+    pub async fn get_tool_help(&self, tool_id: &str) -> Result<String, ToolError> {
+        let tool_config = {
+            let config_manager = self.config_manager.lock().unwrap();
+            config_manager
+                .get_tool_config(tool_id)
+                .ok_or_else(|| ToolError::NotFound(format!("Tool {} not found", tool_id)))?
+                .clone()
+        };
+
+        // Try to get help using common help commands
+        let help_commands = vec![
+            vec!["--help".to_string()],
+            vec!["help".to_string()],
+            vec!["-h".to_string()],
+        ];
+
+        for help_cmd in help_commands {
+            match self.execute_tool_command(&tool_config.command, &help_cmd).await {
+                Ok(output) => {
+                    if output.status.success() {
+                        let help_text = String::from_utf8_lossy(&output.stdout).to_string();
+                        if !help_text.trim().is_empty() {
+                            return Ok(help_text);
+                        }
+                    }
+                }
+                Err(_) => continue,
+            }
+        }
+
+        Err(ToolError::ExecutionFailed(format!("Could not get help information for {}", tool_id)))
+    }
+
+    /// Check all tools for available updates
+    pub async fn check_all_updates(&self) -> Result<Vec<(String, bool)>, ToolError> {
+        let tools_config = {
+            let config_manager = self.config_manager.lock().unwrap();
+            config_manager.get_tools_config().clone()
+        };
+
+        let mut update_results = Vec::new();
+        
+        for tool_config in &tools_config.tools {
+            match self.has_updates_available(&tool_config.id).await {
+                Ok(has_updates) => {
+                    update_results.push((tool_config.id.clone(), has_updates));
+                }
+                Err(e) => {
+                    warn!("Failed to check updates for {}: {}", tool_config.id, e);
+                    update_results.push((tool_config.id.clone(), false));
+                }
+            }
+        }
+
+        Ok(update_results)
     }
 
     /// Update tool to latest version
@@ -548,5 +616,36 @@ impl ToolManager {
         }
 
         Ok(())
+    }
+
+    /// Execute a tool command directly
+    async fn execute_tool_command(&self, command: &str, args: &[String]) -> Result<std::process::Output, ToolError> {
+        let mut cmd = Self::create_hidden_command(command, args);
+        
+        cmd.output()
+            .await
+            .map_err(|e| ToolError::ExecutionFailed(format!("Failed to execute command: {}", e)))
+    }
+
+    /// Compare two semantic version strings
+    fn compare_versions(current: &str, latest: &str) -> std::cmp::Ordering {
+        // Simple version comparison - in production you'd want a proper semver library
+        let current_parts: Vec<u32> = current.split('.').filter_map(|s| s.parse().ok()).collect();
+        let latest_parts: Vec<u32> = latest.split('.').filter_map(|s| s.parse().ok()).collect();
+        
+        let max_len = std::cmp::max(current_parts.len(), latest_parts.len());
+        
+        for i in 0..max_len {
+            let current_part = current_parts.get(i).unwrap_or(&0);
+            let latest_part = latest_parts.get(i).unwrap_or(&0);
+            
+            match current_part.cmp(latest_part) {
+                std::cmp::Ordering::Less => return std::cmp::Ordering::Less,
+                std::cmp::Ordering::Greater => return std::cmp::Ordering::Greater,
+                std::cmp::Ordering::Equal => continue,
+            }
+        }
+        
+        std::cmp::Ordering::Equal
     }
 }

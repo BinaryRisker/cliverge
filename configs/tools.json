@@ -1,12 +1,12 @@
 {
   "version": "1.0",
-  "last_updated": "2024-12-31T08:00:00Z",
+  "last_updated": "2025-08-31T20:00:00Z",
   "tools": [
     {
       "id": "claude-code",
       "name": "Claude Code CLI",
       "description": "Anthropic Claude AI Code Assistant - Generate, explain and optimize code",
-      "website": "https://www.anthropic.com/claude",
+      "website": "https://claude.ai/code",
       "command": "claude",
       "version_check": ["--version"],
       "update_check": ["claude", "update", "--check-only"],
@@ -57,9 +57,9 @@
           "package_name": "@google-ai/gemini-cli"
         },
         "macos": {
-          "method": "brew",
-          "command": ["brew", "install", "gemini-cli"],
-          "package_name": "gemini-cli"
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@google-ai/gemini-cli"],
+          "package_name": "@google-ai/gemini-cli"
         },
         "linux": {
           "method": "npm",
@@ -86,25 +86,25 @@
       "id": "qwen-code-cli",
       "name": "Qwen Code CLI",
       "description": "Alibaba Qwen Code Assistant - Chinese-friendly AI programming tool",
-      "website": "https://qwen.alibaba.com/",
-      "command": "qwen-code",
+      "website": "https://qwenlm.github.io/blog/qwen3-coder",
+      "command": "qwen",
       "version_check": ["--version"],
-      "update_check": ["qwen-code", "check-update"],
+      "update_check": ["npm", "outdated", "-g", "@qwen-code/qwen-code"],
       "install": {
         "windows": {
           "method": "npm",
-          "command": ["npm", "install", "-g", "@alicloud/qwen-code-cli"],
-          "package_name": "@alicloud/qwen-code-cli"
+          "command": ["npm", "install", "-g", "@qwen-code/qwen-code"],
+          "package_name": "@qwen-code/qwen-code"
         },
         "macos": {
-          "method": "brew",
-          "command": ["brew", "install", "qwen-code-cli"],
-          "package_name": "qwen-code-cli"
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@qwen-code/qwen-code"],
+          "package_name": "@qwen-code/qwen-code"
         },
         "linux": {
-          "method": "pip",
-          "command": ["pip", "install", "qwen-code-cli"],
-          "package_name": "qwen-code-cli"
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@qwen-code/qwen-code"],
+          "package_name": "@qwen-code/qwen-code"
         }
       },
       "config_schema": {
@@ -231,7 +231,7 @@
       "id": "opencode",
       "name": "OpenCode CLI",
       "description": "Open source code analysis and generation tool",
-      "website": "https://github.com/opencode/cli",
+      "website": "https://github.com/opencode-ai/opencode",
       "command": "opencode",
       "version_check": ["--version"],
       "update_check": ["opencode", "update", "--check"],
@@ -265,7 +265,7 @@
       "id": "universal-ai-cli",
       "name": "Universal AI CLI",
       "description": "Universal interface for multiple AI providers",
-      "website": "https://github.com/universal-ai/cli",
+      "website": "https://github.com/daxiondi/universal-ai-cli",
       "command": "uai",
       "version_check": ["--version"],
       "update_check": ["update", "--check"],
@@ -304,7 +304,7 @@
       "id": "crush",
       "name": "Crush CLI",
       "description": "File compression and optimization tool",
-      "website": "https://github.com/crush/cli",
+      "website": "https://github.com/charmbracelet/crush",
       "command": "crush",
       "version_check": ["--version"],
       "update_check": ["--check-update"],
@@ -336,7 +336,7 @@
       "id": "iflow-cli",
       "name": "iFlow CLI",
       "description": "Intelligent workflow automation tool",
-      "website": "https://iflow.dev/",
+      "website": "https://github.com/iflow-ai/iflow-cli",
       "command": "iflow",
       "version_check": ["--version"],
       "update_check": ["update", "--check"],
@@ -374,7 +374,7 @@
       "id": "grok-cli",
       "name": "Grok CLI",
       "description": "Grok AI assistant command line interface",
-      "website": "https://grok.x.ai/",
+      "website": "https://github.com/superagent-ai/grok-cli",
       "command": "grok",
       "version_check": ["--version"],
       "update_check": ["update", "--check"],
@@ -407,89 +407,6 @@
           "values": ["grok-1", "grok-1.5", "grok-2"],
           "default": "grok-1.5",
           "description": "Grok model version"
-        }
-      }
-    },
-    {
-      "id": "cloudbase",
-      "name": "CloudBase CLI",
-      "description": "Tencent CloudBase serverless platform CLI",
-      "website": "https://cloudbase.net/",
-      "command": "cloudbase",
-      "version_check": ["--version"],
-      "update_check": ["update", "--check"],
-      "install": {
-        "windows": {
-          "method": "npm",
-          "command": ["npm", "install", "-g", "@cloudbase/cli"],
-          "package_name": "@cloudbase/cli"
-        },
-        "macos": {
-          "method": "npm",
-          "command": ["npm", "install", "-g", "@cloudbase/cli"],
-          "package_name": "@cloudbase/cli"
-        },
-        "linux": {
-          "method": "npm",
-          "command": ["npm", "install", "-g", "@cloudbase/cli"],
-          "package_name": "@cloudbase/cli"
-        }
-      },
-      "config_schema": {
-        "secret_id": {
-          "field_type": "string",
-          "secret": true,
-          "required": true,
-          "description": "Tencent Cloud Secret ID"
-        },
-        "secret_key": {
-          "field_type": "string",
-          "secret": true,
-          "required": true,
-          "description": "Tencent Cloud Secret Key"
-        },
-        "env_id": {
-          "field_type": "string",
-          "required": false,
-          "description": "Default environment ID"
-        }
-      }
-    },
-    {
-      "id": "rock-dev",
-      "name": "Rock Dev CLI",
-      "description": "Rock development framework CLI tool",
-      "website": "https://rockdev.io/",
-      "command": "rock",
-      "version_check": ["--version"],
-      "update_check": ["update", "--check"],
-      "install": {
-        "windows": {
-          "method": "winget",
-          "command": ["winget", "install", "rock-dev"],
-          "package_name": "rock-dev"
-        },
-        "macos": {
-          "method": "brew",
-          "command": ["brew", "install", "rock-dev"],
-          "package_name": "rock-dev"
-        },
-        "linux": {
-          "method": "script",
-          "url": "https://install.rockdev.io/install.sh"
-        }
-      },
-      "config_schema": {
-        "project_type": {
-          "field_type": "enum",
-          "values": ["web", "api", "mobile", "desktop"],
-          "default": "web",
-          "description": "Default project type"
-        },
-        "template_repo": {
-          "field_type": "string",
-          "required": false,
-          "description": "Custom template repository"
         }
       }
     },
