@@ -124,11 +124,9 @@ impl CLIvergeApp {
             }
         });
 
-        // Create cache manager
-        let cache_dir = std::env::var("HOME")
-            .or_else(|_| std::env::var("USERPROFILE"))
-            .unwrap_or_else(|_| ".".to_string());
-        let cache_path = std::path::PathBuf::from(cache_dir).join(".cliverge").join("cache");
+        // Create cache manager - use same config directory as ConfigManager
+        let config_dir = Self::get_config_dir();
+        let cache_path = config_dir.join("cache");
         let mut cache_manager = CacheManager::new(cache_path);
         
         // Load cache
@@ -194,6 +192,13 @@ impl CLIvergeApp {
         }
         
         config_manager
+    }
+    
+    // Helper method to get config directory - same as ConfigManager
+    fn get_config_dir() -> std::path::PathBuf {
+        dirs::home_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join(".cliverge")
     }
 
     fn load_embedded_tools_config() -> Result<cliverge_core::ToolsConfig, Box<dyn std::error::Error>> {
@@ -781,34 +786,28 @@ impl CLIvergeApp {
             
             ui.separator();
             
+            // Get actual config directory path - same as ConfigManager
+            let config_dir = Self::get_config_dir();
+            
             // Configuration Files
             ui.collapsing("📁 Configuration Files", |ui| {
-                // Get config file path
-                let config_path = {
-                    let home_dir = std::env::var("HOME")
-                        .or_else(|_| std::env::var("USERPROFILE"))
-                        .unwrap_or_else(|_| ".".to_string());
-                    std::path::PathBuf::from(home_dir).join(".cliverge").join("config.json")
-                };
+                let settings_path = config_dir.join("settings.json");
+                let tools_path = config_dir.join("tools.json");
                 
                 ui.horizontal(|ui| {
-                    ui.label("Config file:");
-                    ui.code(config_path.to_str().unwrap_or("~/.cliverge/config.json"));
+                    ui.label("Settings file:");
+                    ui.code(settings_path.to_str().unwrap_or("settings.json"));
                     if ui.button("📝 Open").clicked() {
-                        self.open_config_file();
+                        self.open_settings_file();
                     }
                 });
                 
-                // Tools config path
-                let tools_config_path = if let Ok(config) = self.config_manager.lock() {
-                    config.get_app_settings().paths.tools_config_path.clone()
-                } else {
-                    "tools.json".to_string()
-                };
-                
                 ui.horizontal(|ui| {
                     ui.label("Tools config:");
-                    ui.code(&tools_config_path);
+                    ui.code(tools_path.to_str().unwrap_or("tools.json"));
+                    if ui.button("📝 Open").clicked() {
+                        self.open_tools_file();
+                    }
                 });
                 
                 ui.separator();
@@ -822,23 +821,24 @@ impl CLIvergeApp {
             
             // Cache Settings
             ui.collapsing("📋 Cache", |ui| {
+                let cache_path = config_dir.join("cache");
                 ui.horizontal(|ui| {
                     ui.label("Cache directory:");
-                    ui.code("~/.cliverge/cache");
+                    ui.code(cache_path.to_str().unwrap_or("cache"));
                     if ui.button("📁 Open").clicked() {
                         self.open_cache_directory();
                     }
                 });
                 
-                let (status_count, version_count, help_count) = if let Ok(cache) = self.cache_manager.lock() {
+                let (status_count, help_count) = if let Ok(cache) = self.cache_manager.lock() {
                     cache.get_cache_stats()
                 } else {
-                    (0, 0, 0)
+                    (0, 0)
                 };
                 
                 ui.horizontal(|ui| {
-                    ui.label(format!("Cached items: {} status, {} versions, {} help docs", 
-                        status_count, version_count, help_count));
+                    ui.label(format!("Cached items: {} status, {} help docs", 
+                        status_count, help_count));
                 });
                 
                 ui.horizontal(|ui| {
@@ -1055,12 +1055,7 @@ impl CLIvergeApp {
     }
     
     fn open_cache_directory(&self) {
-        let cache_path = {
-            let cache_dir = std::env::var("HOME")
-                .or_else(|_| std::env::var("USERPROFILE"))
-                .unwrap_or_else(|_| ".".to_string());
-            std::path::PathBuf::from(cache_dir).join(".cliverge").join("cache")
-        };
+        let cache_path = Self::get_config_dir().join("cache");
         
         #[cfg(windows)]
         {
@@ -1084,18 +1079,13 @@ impl CLIvergeApp {
         }
     }
     
-    fn open_config_file(&self) {
-        let config_path = {
-            let home_dir = std::env::var("HOME")
-                .or_else(|_| std::env::var("USERPROFILE"))
-                .unwrap_or_else(|_| ".".to_string());
-            std::path::PathBuf::from(home_dir).join(".cliverge").join("config.json")
-        };
+    fn open_settings_file(&self) {
+        let settings_path = Self::get_config_dir().join("settings.json");
         
         #[cfg(windows)]
         {
             let _ = std::process::Command::new("notepad")
-                .arg(config_path.to_str().unwrap_or("."))
+                .arg(settings_path.to_str().unwrap_or("."))
                 .spawn();
         }
         
@@ -1103,7 +1093,7 @@ impl CLIvergeApp {
         {
             let _ = std::process::Command::new("open")
                 .arg("-t")
-                .arg(&config_path)
+                .arg(&settings_path)
                 .spawn();
         }
         
@@ -1119,7 +1109,45 @@ impl CLIvergeApp {
                     .unwrap_or(false)
                 {
                     let _ = std::process::Command::new(editor)
-                        .arg(&config_path)
+                        .arg(&settings_path)
+                        .spawn();
+                    break;
+                }
+            }
+        }
+    }
+    
+    fn open_tools_file(&self) {
+        let tools_path = Self::get_config_dir().join("tools.json");
+        
+        #[cfg(windows)]
+        {
+            let _ = std::process::Command::new("notepad")
+                .arg(tools_path.to_str().unwrap_or("."))
+                .spawn();
+        }
+        
+        #[cfg(target_os = "macos")]
+        {
+            let _ = std::process::Command::new("open")
+                .arg("-t")
+                .arg(&tools_path)
+                .spawn();
+        }
+        
+        #[cfg(target_os = "linux")]
+        {
+            // Try common text editors
+            let editors = ["gedit", "kate", "nano", "vi"];
+            for editor in &editors {
+                if std::process::Command::new("which")
+                    .arg(editor)
+                    .output()
+                    .map(|o| o.status.success())
+                    .unwrap_or(false)
+                {
+                    let _ = std::process::Command::new(editor)
+                        .arg(&tools_path)
                         .spawn();
                     break;
                 }
@@ -1128,12 +1156,7 @@ impl CLIvergeApp {
     }
     
     fn open_config_directory(&self) {
-        let config_dir = {
-            let home_dir = std::env::var("HOME")
-                .or_else(|_| std::env::var("USERPROFILE"))
-                .unwrap_or_else(|_| ".".to_string());
-            std::path::PathBuf::from(home_dir).join(".cliverge")
-        };
+        let config_dir = Self::get_config_dir();
         
         #[cfg(windows)]
         {

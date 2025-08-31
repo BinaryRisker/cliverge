@@ -54,12 +54,9 @@
 | **Gemini CLI** | Google Gemini多模态AI助手 | ✅ 完整支持 |
 | **Qwen Code CLI** | 阿里云通义千问代码版 | ✅ 基础支持 |
 | **OpenAI CLI** | OpenAI官方命令行工具 | ✅ 基础支持 |
-| **GitHub Copilot CLI** | GitHub Copilot命令行界面 | ✅ 基础支持 |
 | **Cursor CLI** | Cursor编辑器命令行工具 | ✅ 基础支持 |
 | **OpenCode** | 开源代码生成工具 | ✅ 基础支持 |
 | **iFlow CLI** | 智能工作流自动化工具 | ✅ 基础支持 |
-| **Grok CLI** | X.AI Grok助手 | ✅ 配置支持 |
-| **Universal AI CLI** | 多AI提供商统一接口 | ✅ 配置支持 |
 
 ## 🚀 快速开始
 

@@ -40,7 +40,6 @@ impl<T> CacheEntry<T> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolCache {
     pub status_cache: HashMap<String, CacheEntry<ToolStatus>>,
-    pub version_cache: HashMap<String, CacheEntry<String>>,
     pub help_cache: HashMap<String, CacheEntry<String>>,
 }
 
@@ -48,7 +47,6 @@ impl Default for ToolCache {
     fn default() -> Self {
         Self {
             status_cache: HashMap::new(),
-            version_cache: HashMap::new(),
             help_cache: HashMap::new(),
         }
     }
@@ -104,18 +102,6 @@ impl CacheManager {
         self.cache.status_cache.insert(tool_id.to_string(), entry);
     }
     
-    pub fn get_tool_version(&self, tool_id: &str) -> Option<String> {
-        self.cache.version_cache
-            .get(tool_id)
-            .and_then(|entry| if entry.is_expired() { None } else { Some(entry.data.clone()) })
-    }
-    
-    pub fn set_tool_version(&mut self, tool_id: &str, version: String) {
-        // 6 hours TTL for version (was 1 hour, versions don't change often)
-        let entry = CacheEntry::new(version, 21600);
-        self.cache.version_cache.insert(tool_id.to_string(), entry);
-    }
-    
     pub fn get_tool_help(&self, tool_id: &str) -> Option<String> {
         self.cache.help_cache
             .get(tool_id)
@@ -130,7 +116,6 @@ impl CacheManager {
     
     pub fn invalidate_tool(&mut self, tool_id: &str) {
         self.cache.status_cache.remove(tool_id);
-        self.cache.version_cache.remove(tool_id);
         self.cache.help_cache.remove(tool_id);
     }
     
@@ -138,17 +123,15 @@ impl CacheManager {
         self.cache = ToolCache::default();
     }
     
-    pub fn get_cache_stats(&self) -> (usize, usize, usize) {
+    pub fn get_cache_stats(&self) -> (usize, usize) {
         (
             self.cache.status_cache.len(),
-            self.cache.version_cache.len(),
             self.cache.help_cache.len(),
         )
     }
     
     fn clean_expired(&mut self) {
         self.cache.status_cache.retain(|_, entry| !entry.is_expired());
-        self.cache.version_cache.retain(|_, entry| !entry.is_expired());
         self.cache.help_cache.retain(|_, entry| !entry.is_expired());
     }
 }

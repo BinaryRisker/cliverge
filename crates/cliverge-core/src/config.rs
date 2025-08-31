@@ -206,9 +206,10 @@ impl ConfigManager {
     }
 
     fn get_config_dir() -> PathBuf {
-        dirs::config_dir()
+        // Use ~/.cliverge for all platforms for consistency
+        dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("cliverge")
+            .join(".cliverge")
     }
 
     fn create_default_tools_config() -> ToolsConfig {
