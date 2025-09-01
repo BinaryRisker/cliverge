@@ -10,17 +10,17 @@ winapi = { version = "0.3", features = ["wincon", "winuser", "consoleapi"] }
 
 [dependencies]
 cliverge-core = { path = "../cliverge-core" }
-eframe = "0.24"
-egui = "0.24"
+eframe = { version = "0.24", default-features = false, features = ["default_fonts", "glow"] }
+egui = { version = "0.24", default-features = false, features = ["default_fonts"] }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
-tracing-subscriber = "0.3"
+# tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi"] }  # Simplified logging
 dirs = { workspace = true }
 chrono = { workspace = true }
-webbrowser = "0.8"
-image = "0.24"
+webbrowser = { version = "0.8", default-features = false }
+# image = { version = "0.24", default-features = false, features = ["png"] }  # Removed, not directly used
 
 # Windows resource file for icon
 [target.'cfg(windows)'.build-dependencies]

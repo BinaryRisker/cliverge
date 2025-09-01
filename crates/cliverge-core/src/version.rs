@@ -342,24 +342,81 @@ impl VersionChecker {
         Err(ToolError::ConfigError(format!("No package name found for {}", tool_config.id)))
     }
 
-    /// Parse version string from command output
+    /// Parse version string from command output using simple string matching
     fn parse_version_string(output: &str) -> String {
-        // Common version patterns
-        let patterns = [
-            regex::Regex::new(r"v?(\d+\.\d+\.\d+(?:\.\d+)?)").unwrap(),
-            regex::Regex::new(r"version\s+v?(\d+\.\d+\.\d+(?:\.\d+)?)").unwrap(),
-            regex::Regex::new(r"(\d+\.\d+\.\d+(?:\.\d+)?)").unwrap(),
-        ];
-
-        for pattern in &patterns {
-            if let Some(captures) = pattern.captures(output) {
-                if let Some(version) = captures.get(1) {
-                    return version.as_str().to_string();
-                }
+        // Look for version patterns in the output
+        let lines = output.lines();
+        
+        for line in lines {
+            // Find version-like patterns manually
+            if let Some(version) = Self::extract_version_from_line(line) {
+                return version;
             }
         }
 
         "unknown".to_string()
+    }
+
+    /// Extract version number from a single line using simple string operations
+    fn extract_version_from_line(line: &str) -> Option<String> {
+        let line = line.to_lowercase();
+        
+        // Look for words that commonly precede version numbers
+        let triggers = ["version", "v", "ver", "release"];
+        
+        for trigger in &triggers {
+            if let Some(pos) = line.find(trigger) {
+                let after_trigger = &line[pos + trigger.len()..];
+                if let Some(version) = Self::find_version_number(after_trigger) {
+                    return Some(version);
+                }
+            }
+        }
+        
+        // Fallback: look for version-like patterns anywhere in the line
+        Self::find_version_number(&line)
+    }
+
+    /// Find version number pattern (x.y.z or x.y.z.w) in text
+    fn find_version_number(text: &str) -> Option<String> {
+        let chars: Vec<char> = text.chars().collect();
+        let mut i = 0;
+        
+        while i < chars.len() {
+            if chars[i].is_ascii_digit() {
+                // Found start of potential version number
+                let _start = i;
+                let mut version_chars = Vec::new();
+                let mut dot_count = 0;
+                
+                while i < chars.len() {
+                    let ch = chars[i];
+                    if ch.is_ascii_digit() {
+                        version_chars.push(ch);
+                    } else if ch == '.' && dot_count < 3 {
+                        version_chars.push(ch);
+                        dot_count += 1;
+                    } else {
+                        break;
+                    }
+                    i += 1;
+                }
+                
+                // Valid version must have at least 2 dots (x.y.z)
+                if dot_count >= 2 {
+                    let version: String = version_chars.into_iter().collect();
+                    // Remove trailing dot if any
+                    if version.ends_with('.') {
+                        return Some(version[..version.len()-1].to_string());
+                    }
+                    return Some(version);
+                }
+            } else {
+                i += 1;
+            }
+        }
+        
+        None
     }
 
     /// Parse latest version from update check output
@@ -370,16 +427,17 @@ impl VersionChecker {
         }
 
         // Look for "update available" messages with version numbers
-        let patterns = [
-            regex::Regex::new(r"update.*available.*v?(\d+\.\d+\.\d+(?:\.\d+)?)").unwrap(),
-            regex::Regex::new(r"new.*version.*v?(\d+\.\d+\.\d+(?:\.\d+)?)").unwrap(),
-            regex::Regex::new(r"latest.*v?(\d+\.\d+\.\d+(?:\.\d+)?)").unwrap(),
-        ];
-
-        for pattern in &patterns {
-            if let Some(captures) = pattern.captures(output) {
-                if let Some(version) = captures.get(1) {
-                    return version.as_str().to_string();
+        let update_keywords = ["update", "new", "latest", "available"];
+        
+        for line in output.lines() {
+            let line_lower = line.to_lowercase();
+            
+            // Check if line contains update-related keywords
+            let has_update_keyword = update_keywords.iter().any(|&keyword| line_lower.contains(keyword));
+            
+            if has_update_keyword {
+                if let Some(version) = Self::find_version_number(&line_lower) {
+                    return version;
                 }
             }
         }

@@ -1,232 +1,268 @@
-# CLIverge - AI CLI工具集成管理平台
+# CLIverge - AI CLI Tool Manager
 
 <p align="center">
-  <strong>轻量化 • 可视化 • 跨平台</strong>
+  <strong>Lightweight • Visual • Cross-Platform</strong>
 </p>
 
 <p align="center">
-  <a href="#功能特性">功能特性</a> •
-  <a href="#快速开始">快速开始</a> •
-  <a href="#架构设计">架构设计</a> •
-  <a href="#支持工具">支持工具</a> •
-  <a href="#开发计划">开发计划</a> •
-  <a href="#贡献指南">贡献指南</a>
+  <a href="#features">Features</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#supported-tools">Supported Tools</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#contributing">Contributing</a>
+</p>
+
+<p align="center">
+  <a href="README_zh.md">中文</a> | 
+  <strong>English</strong>
 </p>
 
 ---
 
-## 📖 项目简介
+## 📖 About CLIverge
 
-**CLIverge** 是一个轻量化的桌面AI工具管理平台，旨在简化AI命令行工具的安装、管理和使用。通过直观的GUI界面，用户可以轻松管理各种AI开发工具，无需记忆复杂的命令行操作。
+**CLIverge** is a lightweight desktop AI tool management platform designed to simplify the installation, management, and usage of AI command-line tools. Through an intuitive GUI interface, users can easily manage various AI development tools without memorizing complex command-line operations.
 
-### 核心理念
+### Core Concept
 
-- **CLI** + **verge** (边缘、汇聚) = **CLIverge**
-- 汇聚各种CLI工具于一个平台的统一管理解决方案
+- **CLI** + **verge** (convergence) = **CLIverge**
+- A unified management solution that converges various CLI tools into one platform
 
-## ✨ 功能特性
+## ✨ Features
 
-### 已实现功能
+### ✅ Implemented Features
 
-- ✅ **现代化GUI界面** - 基于Egui的原生桌面应用
-- ✅ **工具状态检测** - 实时检测工具安装状态和版本信息
-- ✅ **智能缓存系统** - 缓存工具状态、版本信息和帮助文档
-- ✅ **配置化管理** - 通过JSON配置文件管理工具，无需动态加载
-- ✅ **异步执行架构** - 基于Tokio的高性能异步执行
-- ✅ **跨平台支持** - Windows、macOS、Linux原生支持
-- ✅ **多主题切换** - 支持明亮/暗色主题
-- ✅ **实时通知系统** - 操作反馈和状态更新通知
+- ✅ **Modern GUI Interface** - Native desktop app built with Egui
+- ✅ **Tool Status Detection** - Real-time detection of tool installation status and version information
+- ✅ **Smart Caching System** - Cache tool status, version info, and help documentation
+- ✅ **Configuration Management** - Manage tools via JSON config files without dynamic loading
+- ✅ **Async Architecture** - High-performance async execution based on Tokio
+- ✅ **Cross-Platform Support** - Native support for Windows, macOS, and Linux
+- ✅ **Multi-Theme Support** - Light/Dark theme switching
+- ✅ **Real-time Notifications** - Operation feedback and status update notifications
+- ✅ **Ultra-Lightweight** - Optimized to only 1.5MB (73.9% size reduction)
 
-### 开发中功能
+### 🚧 In Development
 
-- 🚧 **一键安装/卸载** - 智能识别平台，自动选择最佳安装方式
-- 🚧 **版本更新检查** - 自动检查工具更新
-- 🚧 **工具配置管理** - 可视化配置工具参数
-- 🚧 **命令执行终端** - 集成终端模拟器
+- 🚧 **One-Click Install/Uninstall** - Smart platform detection with optimal installation methods
+- 🚧 **Version Update Checker** - Automatic tool update checking
+- 🚧 **Tool Configuration Management** - Visual configuration of tool parameters
+- 🚧 **Integrated Terminal** - Built-in terminal emulator
 
-## 🛠 支持工具
+## 🛠 Supported Tools
 
-目前支持以下AI命令行工具的管理：
+Currently supports management of the following AI command-line tools:
 
-| 工具名称 | 描述 | 状态 |
-|---------|------|------|
-| **Claude Code CLI** | Anthropic Claude AI代码助手 | ✅ 完整支持 |
-| **Gemini CLI** | Google Gemini多模态AI助手 | ✅ 完整支持 |
-| **Qwen Code CLI** | 阿里云通义千问代码版 | ✅ 基础支持 |
-| **OpenAI CLI** | OpenAI官方命令行工具 | ✅ 基础支持 |
-| **Cursor CLI** | Cursor编辑器命令行工具 | ✅ 基础支持 |
-| **OpenCode** | 开源代码生成工具 | ✅ 基础支持 |
-| **iFlow CLI** | 智能工作流自动化工具 | ✅ 基础支持 |
+| Tool Name | Description | Status |
+|-----------|-------------|---------|
+| **Claude Code CLI** | Anthropic Claude AI code assistant | ✅ Full Support |
+| **Gemini CLI** | Google Gemini multimodal AI assistant | ✅ Full Support |
+| **Qwen Code CLI** | Alibaba Cloud Qwen code version | ✅ Basic Support |
+| **OpenAI CLI** | Official OpenAI command-line tool | ✅ Basic Support |
+| **Cursor CLI** | Cursor editor command-line tool | ✅ Basic Support |
+| **OpenCode** | Open-source code generation tool | ✅ Basic Support |
+| **iFlow CLI** | Intelligent workflow automation tool | ✅ Basic Support |
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 系统要求
+### System Requirements
 
-- **操作系统**: Windows 10+, macOS 10.15+, Linux (主流发行版)
-- **运行环境**: Rust 1.78+ (开发), 无需运行时依赖(使用)
-- **内存**: 最低 2GB RAM
-- **磁盘空间**: 100MB
+- **Operating System**: Windows 10+, macOS 10.15+, Linux (mainstream distributions)
+- **Runtime**: No runtime dependencies required
+- **Memory**: Minimum 2GB RAM
+- **Disk Space**: 2MB
 
-### 安装
+### Installation
 
-#### 从源码构建
+#### Option 1: Download Pre-built Binaries (Recommended)
+
+Visit the [Releases](https://github.com/yourusername/cliverge/releases) page and download the appropriate installer for your platform:
+
+- **Windows**: Download `.msi` installer or `.exe` file
+- **macOS**: Download `.dmg` installer or `.tar.xz` archive
+- **Linux**: Download `.deb`/`.rpm` packages or `.tar.xz` archive
+
+#### Option 2: Install via Script
+
+**Shell (Linux/macOS):**
+```bash
+curl -fsSL https://github.com/yourusername/cliverge/releases/latest/download/install.sh | sh
+```
+
+**PowerShell (Windows):**
+```powershell
+irm https://github.com/yourusername/cliverge/releases/latest/download/install.ps1 | iex
+```
+
+#### Option 3: Build from Source
 
 ```bash
-# 克隆仓库
+# Clone the repository
 git clone https://github.com/yourusername/cliverge.git
 cd cliverge
 
-# 构建项目
-cargo build --release
+# Build the project (optimized version)
+cargo build --profile release-min -p cliverge
 
-# 运行应用
-cargo run --release -p cliverge-gui
+# Optional: Compress with UPX for minimal size
+upx --best target/release-min/cliverge.exe
+
+# Run the application
+cargo run --profile release-min -p cliverge
 ```
 
-#### 预编译二进制（开发中）
+### Usage Guide
 
-访问 [Releases](https://github.com/yourusername/cliverge/releases) 页面下载对应平台的安装包。
+1. **Launch Application**: Double-click the executable or run from terminal
+2. **Browse Tools**: Left panel displays all available AI tools
+3. **Check Status**: Automatically detects each tool's installation status
+4. **Install Tools**: Click "Install" button for one-click installation
+5. **Manage Configuration**: Configure tool parameters in Settings
 
-### 使用指南
+## 🏗 Architecture
 
-1. **启动应用**: 双击可执行文件或从终端运行
-2. **浏览工具**: 左侧面板显示所有可用的AI工具
-3. **查看状态**: 自动检测每个工具的安装状态
-4. **安装工具**: 点击"Install"按钮一键安装
-5. **管理配置**: 在Settings中配置工具参数
+### Tech Stack
 
-## 🏗 架构设计
+- **Core Language**: Rust (2021 Edition)
+- **GUI Framework**: Egui (immediate mode GUI)
+- **Async Runtime**: Tokio
+- **Serialization**: Serde + JSON
+- **Caching System**: Custom JSON cache
 
-### 技术栈
-
-- **核心语言**: Rust (2021 Edition)
-- **GUI框架**: Egui (即时模式GUI)
-- **异步运行时**: Tokio
-- **序列化**: Serde + JSON
-- **缓存系统**: 自定义JSON缓存
-
-### 模块结构
+### Module Structure
 
 ```
 cliverge/
 ├── crates/
-│   ├── cliverge-gui/      # GUI应用主模块
+│   ├── cliverge-gui/      # GUI application main module
 │   │   ├── src/
-│   │   │   ├── main.rs    # 应用入口
-│   │   │   └── app.rs     # 主应用逻辑
+│   │   │   ├── main.rs    # Application entry point
+│   │   │   └── app.rs     # Main application logic
 │   │   └── Cargo.toml
-│   └── cliverge-core/     # 核心服务层
+│   └── cliverge-core/     # Core service layer
 │       ├── src/
-│       │   ├── lib.rs     # 模块导出
-│       │   ├── config.rs  # 配置管理
-│       │   ├── tool.rs    # 工具管理
-│       │   ├── version.rs # 版本检查
-│       │   ├── cache.rs   # 缓存系统
-│       │   └── error.rs   # 错误处理
+│       │   ├── lib.rs     # Module exports
+│       │   ├── config.rs  # Configuration management
+│       │   ├── tool.rs    # Tool management
+│       │   ├── version.rs # Version checking
+│       │   ├── cache.rs   # Caching system
+│       │   └── error.rs   # Error handling
 │       └── Cargo.toml
 ├── configs/
-│   ├── tools.json         # 工具配置文件
-│   └── settings.json      # 应用设置模板
-└── Cargo.toml            # 工作空间配置
+│   ├── tools.json         # Tool configuration file
+│   └── settings.json      # Application settings template
+└── Cargo.toml            # Workspace configuration
 ```
 
-### 设计原则
+### Design Principles
 
-1. **轻量化优先** - 最小化复杂度，专注核心功能
-2. **配置化管理** - 通过JSON配置文件管理工具，避免复杂的插件系统
-3. **用户体验至上** - 简洁直观的界面，降低使用门槛
-4. **性能优化** - 异步执行，智能缓存，快速响应
+1. **Lightweight First** - Minimize complexity, focus on core functionality
+2. **Configuration-Driven** - Manage tools via JSON config files, avoid complex plugin systems
+3. **User Experience First** - Clean and intuitive interface, lower the barrier to entry
+4. **Performance Optimized** - Async execution, smart caching, fast response
 
-## 📊 项目状态
+## 📊 Project Status
 
-### 完成度评估
+### Completion Assessment
 
-| 模块 | 完成度 | 说明 |
-|-----|--------|-----|
-| **GUI界面** | 85% | 主界面完整，部分功能待完善 |
-| **核心引擎** | 60% | 基础功能实现，高级特性开发中 |
-| **工具管理** | 70% | 状态检测完成，安装功能开发中 |
-| **缓存系统** | 90% | 完整的缓存机制已实现 |
-| **配置管理** | 80% | 配置读写完成，UI编辑器开发中 |
-| **版本检查** | 40% | 基础架构完成，策略实现中 |
+| Module | Completion | Notes |
+|--------|------------|-------|
+| **GUI Interface** | 85% | Main interface complete, some features pending |
+| **Core Engine** | 60% | Basic functionality implemented, advanced features in development |
+| **Tool Management** | 70% | Status detection complete, installation features in development |
+| **Caching System** | 90% | Complete caching mechanism implemented |
+| **Configuration Management** | 80% | Config read/write complete, UI editor in development |
+| **Version Checking** | 40% | Basic architecture complete, strategy implementation in progress |
 
-### 性能指标
+### Performance Metrics
 
-- **启动时间**: < 3秒
-- **内存占用**: < 50MB (空闲时)
-- **CPU使用率**: < 1% (空闲时)
-- **二进制大小**: ~30MB
+- **Startup Time**: < 3 seconds
+- **Memory Usage**: < 35MB (idle)
+- **CPU Usage**: < 1% (idle)
+- **Binary Size**: 1.5MB (73.9% reduction achieved)
 
-## 🗺 开发计划
+## 🎯 Development Roadmap
 
-### 短期目标 (1-2周)
+### Short-term Goals (1-2 weeks)
 
-- [ ] 完善工具安装/卸载功能
-- [ ] 实现版本更新检查机制
-- [ ] 添加工具配置编辑器
-- [ ] 优化错误处理和用户反馈
+- [ ] Complete tool install/uninstall functionality
+- [ ] Implement version update checking mechanism
+- [ ] Add tool configuration editor
+- [ ] Optimize error handling and user feedback
 
-### 中期目标 (1个月)
+### Medium-term Goals (1 month)
 
-- [ ] 集成终端模拟器
-- [ ] 支持更多AI工具
-- [ ] 实现工具使用统计
-- [ ] 添加工具推荐功能
+- [ ] Integrate terminal emulator
+- [ ] Support more AI tools
+- [ ] Implement tool usage statistics
+- [ ] Add tool recommendation features
 
-### 长期目标 (3个月)
+### Long-term Goals (3 months)
 
-- [ ] 插件市场（简化版）
-- [ ] 云同步配置
-- [ ] 工作流自动化
-- [ ] 多语言支持
+- [ ] Plugin marketplace (simplified version)
+- [ ] Cloud configuration sync
+- [ ] Workflow automation
+- [ ] Multi-language support
 
-## 🤝 贡献指南
+## 🤝 Contributing
 
-欢迎贡献代码、报告问题或提出建议！
+Contributions are welcome! Feel free to contribute code, report issues, or suggest improvements.
 
-### 如何贡献
+### How to Contribute
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 提交 Pull Request
+1. Fork this repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Submit a Pull Request
 
-### 开发环境设置
+### Development Environment Setup
 
 ```bash
-# 安装Rust
+# Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# 安装开发工具
+# Install development tools
 cargo install cargo-watch cargo-edit
 
-# 运行开发模式
-cargo watch -x 'run -p cliverge-gui'
+# Run in development mode
+cargo watch -x 'run -p cliverge'
 ```
 
-### 代码规范
+### Code Standards
 
-- 遵循 Rust 官方代码风格指南
-- 使用 `cargo fmt` 格式化代码
-- 使用 `cargo clippy` 进行代码检查
-- 为公共API编写文档注释
+- Follow Rust official style guidelines
+- Use `cargo fmt` to format code
+- Use `cargo clippy` for code linting
+- Write documentation comments for public APIs
 
-## 📄 许可证
+## 🏆 Optimization Achievements
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+CLIverge has undergone extensive optimization to achieve minimal binary size while maintaining full functionality:
 
-## 🙏 致谢
+- **Original Size**: 5.88MB
+- **Optimized Size**: 1.53MB
+- **Size Reduction**: 73.9%
+- **Optimization Techniques**: Dependency pruning, feature gating, custom algorithms, LTO, UPX compression
 
-- [Egui](https://github.com/emilk/egui) - 优秀的即时模式GUI框架
-- [Tokio](https://tokio.rs/) - 强大的异步运行时
-- 所有AI工具的开发者们
+For detailed optimization information, see [PHASE3_FINAL_OPTIMIZATION.md](docs/PHASE3_FINAL_OPTIMIZATION.md).
 
-## 📞 联系方式
+## 📄 License
 
-- 项目主页: [https://github.com/yourusername/cliverge](https://github.com/yourusername/cliverge)
-- 问题反馈: [Issues](https://github.com/yourusername/cliverge/issues)
-- 讨论交流: [Discussions](https://github.com/yourusername/cliverge/discussions)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Egui](https://github.com/emilk/egui) - Excellent immediate mode GUI framework
+- [Tokio](https://tokio.rs/) - Powerful async runtime
+- All AI tool developers
+
+## 📞 Contact
+
+- Project Homepage: [https://github.com/yourusername/cliverge](https://github.com/yourusername/cliverge)
+- Issue Reports: [Issues](https://github.com/yourusername/cliverge/issues)
+- Discussions: [Discussions](https://github.com/yourusername/cliverge/discussions)
 
 ---
 

@@ -65,11 +65,11 @@ pids
 /release/
 /build/
 /out/
+/upx/
 
 # Documentation Build
 /doc/
 /docs/build/
-
 # Temporary Files
 *.tmp
 *.temp
@@ -110,3 +110,12 @@ rust-project.json
 /.local/
 /tmp/
 /temp/
+
+# UPX and release artifacts
+upx-*/
+upx.zip
+release/
+
+# Optimization artifacts
+*.log
+*.bak

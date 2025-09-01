@@ -69,6 +69,9 @@ pub struct AppState {
     pub settings_auto_refresh_on_startup: bool,
     pub settings_debug_mode: bool,
     pub settings_experimental_features: bool,
+    
+    // Auto-check timer state
+    pub last_auto_check: Option<Instant>,
 }
 
 impl Default for AppState {
@@ -91,6 +94,7 @@ impl Default for AppState {
             settings_auto_refresh_on_startup: true,
             settings_debug_mode: false,
             settings_experimental_features: false,
+            last_auto_check: None,
         }
     }
 }
@@ -157,6 +161,11 @@ impl CLIvergeApp {
 
         // Load settings into app state
         app.load_settings_into_state();
+        
+        // Initialize auto check timer if enabled
+        if app.app_state.settings_auto_check_updates {
+            app.start_auto_check_timer();
+        }
 
         // Load initial tool configs with cached status
         app.load_tools_with_cache();
@@ -177,6 +186,7 @@ impl CLIvergeApp {
                 auto_check_updates: false,
                 check_interval_minutes: 30,
                 show_notifications: true,
+                auto_refresh_on_startup: true,
             },
             paths: PathSettings {
                 tools_config_path: "tools.json".to_string(),
@@ -231,6 +241,7 @@ impl CLIvergeApp {
             self.app_state.settings_auto_check_updates = settings.behavior.auto_check_updates;
             self.app_state.settings_check_interval = settings.behavior.check_interval_minutes;
             self.app_state.settings_show_notifications = settings.behavior.show_notifications;
+            self.app_state.settings_auto_refresh_on_startup = settings.behavior.auto_refresh_on_startup;
         }
     }
 
@@ -243,6 +254,7 @@ impl CLIvergeApp {
             settings.behavior.auto_check_updates = self.app_state.settings_auto_check_updates;
             settings.behavior.check_interval_minutes = self.app_state.settings_check_interval;
             settings.behavior.show_notifications = self.app_state.settings_show_notifications;
+            settings.behavior.auto_refresh_on_startup = self.app_state.settings_auto_refresh_on_startup;
             
             config.update_app_settings(settings);
             
@@ -750,8 +762,11 @@ impl CLIvergeApp {
         egui::ScrollArea::vertical().show(ui, |ui| {
             // Appearance Settings
             ui.collapsing("🎨 Appearance", |ui| {
+                let mut settings_changed = false;
+                
                 ui.horizontal(|ui| {
                     ui.label("Theme:");
+                    let old_theme = self.app_state.settings_theme.clone();
                     egui::ComboBox::from_label("")
                         .selected_text(&self.app_state.settings_theme)
                         .show_ui(ui, |ui| {
@@ -759,29 +774,62 @@ impl CLIvergeApp {
                             ui.selectable_value(&mut self.app_state.settings_theme, "light".to_string(), "Light");
                             ui.selectable_value(&mut self.app_state.settings_theme, "auto".to_string(), "Auto");
                         });
+                    if old_theme != self.app_state.settings_theme {
+                        settings_changed = true;
+                    }
                 });
                 
                 ui.horizontal(|ui| {
                     ui.label("Font Size:");
-                    ui.add(egui::Slider::new(&mut self.app_state.settings_font_size, 10.0..=24.0).suffix("px"));
+                    if ui.add(egui::Slider::new(&mut self.app_state.settings_font_size, 10.0..=24.0).suffix("px")).changed() {
+                        settings_changed = true;
+                    }
                 });
+                
+                // Auto-save when settings change
+                if settings_changed {
+                    self.save_settings_from_state();
+                    self.add_notification("Settings saved automatically".to_string(), NotificationLevel::Info);
+                }
             });
             
             ui.separator();
             
             // Behavior Settings
             ui.collapsing("⚙ Behavior", |ui| {
-                ui.checkbox(&mut self.app_state.settings_auto_check_updates, "Auto check for updates");
+                let mut settings_changed = false;
+                
+                let old_auto_check = self.app_state.settings_auto_check_updates;
+                if ui.checkbox(&mut self.app_state.settings_auto_check_updates, "Auto check for updates").changed() {
+                    settings_changed = true;
+                }
                 
                 if self.app_state.settings_auto_check_updates {
                     ui.horizontal(|ui| {
                         ui.label("Check interval:");
-                        ui.add(egui::Slider::new(&mut self.app_state.settings_check_interval, 5..=120).suffix(" minutes"));
+                        if ui.add(egui::Slider::new(&mut self.app_state.settings_check_interval, 5..=120).suffix(" minutes")).changed() {
+                            settings_changed = true;
+                        }
                     });
                 }
                 
-                ui.checkbox(&mut self.app_state.settings_show_notifications, "Show notifications");
-                ui.checkbox(&mut self.app_state.settings_auto_refresh_on_startup, "Auto refresh tool status on startup");
+                if ui.checkbox(&mut self.app_state.settings_show_notifications, "Show notifications").changed() {
+                    settings_changed = true;
+                }
+                if ui.checkbox(&mut self.app_state.settings_auto_refresh_on_startup, "Auto refresh tool status on startup").changed() {
+                    settings_changed = true;
+                }
+                
+                // Auto-save when settings change
+                if settings_changed {
+                    self.save_settings_from_state();
+                    self.add_notification("Settings saved automatically".to_string(), NotificationLevel::Info);
+                    
+                    // If auto_check_updates was enabled, start the timer
+                    if !old_auto_check && self.app_state.settings_auto_check_updates {
+                        self.start_auto_check_timer();
+                    }
+                }
             });
             
             ui.separator();
@@ -1179,6 +1227,48 @@ impl CLIvergeApp {
                 .spawn();
         }
     }
+    
+    fn start_auto_check_timer(&mut self) {
+        // Reset the timer
+        self.app_state.last_auto_check = Some(Instant::now());
+        
+        if self.app_state.settings_show_notifications {
+            self.add_notification(
+                format!("Auto check enabled - will check every {} minutes", 
+                       self.app_state.settings_check_interval),
+                NotificationLevel::Info
+            );
+        }
+    }
+    
+    fn check_auto_update_timer(&mut self) {
+        if !self.app_state.settings_auto_check_updates {
+            return;
+        }
+        
+        let should_check = if let Some(last_check) = self.app_state.last_auto_check {
+            let elapsed = last_check.elapsed();
+            let interval = Duration::from_secs((self.app_state.settings_check_interval as u64) * 60);
+            elapsed >= interval
+        } else {
+            // First time check
+            true
+        };
+        
+        if should_check && !self.app_state.is_refreshing {
+            self.app_state.last_auto_check = Some(Instant::now());
+            
+            if self.app_state.settings_show_notifications {
+                self.add_notification(
+                    "Auto checking tool updates...".to_string(),
+                    NotificationLevel::Info
+                );
+            }
+            
+            // Start background status checking
+            self.start_background_status_checking();
+        }
+    }
 }
 
 impl eframe::App for CLIvergeApp {
@@ -1196,6 +1286,9 @@ impl eframe::App for CLIvergeApp {
 
         // Update progress from background tasks
         self.update_progress();
+        
+        // Check auto update timer
+        self.check_auto_update_timer();
 
         // Reset refreshing state if all progress items are completed or failed
         if self.app_state.is_refreshing {

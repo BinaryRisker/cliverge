@@ -24,6 +24,7 @@ pub struct BehaviorSettings {
     pub auto_check_updates: bool,
     pub check_interval_minutes: u32,
     pub show_notifications: bool,
+    pub auto_refresh_on_startup: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,6 +82,7 @@ impl Default for AppSettings {
                 auto_check_updates: true,
                 check_interval_minutes: 30,
                 show_notifications: true,
+                auto_refresh_on_startup: true,
             },
             paths: PathSettings {
                 tools_config_path: "tools.json".to_string(),
