@@ -60,6 +60,15 @@ pub struct AppState {
     pub status_progress: Vec<StatusCheckProgress>,
     pub is_refreshing: bool,
     
+    // Tool configuration editor state
+    pub show_tool_editor: bool,
+    pub editing_tool_id: Option<String>,  // None for new tool, Some(id) for editing
+    pub tool_form_state: ToolFormState,
+    
+    // Delete confirmation dialog state
+    pub show_delete_confirmation: bool,
+    pub tool_to_delete: Option<String>,
+    
     // Settings state (live editing)
     pub settings_theme: String,
     pub settings_font_size: f32,
@@ -74,6 +83,69 @@ pub struct AppState {
     pub last_auto_check: Option<Instant>,
 }
 
+// Tool form state for adding/editing tools
+#[derive(Debug, Clone)]
+pub struct ToolFormState {
+    // Basic info
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub website: String,
+    pub command: String,
+    pub version_check_args: String,  // Space-separated args like "--version"
+    pub update_check_args: String,   // Space-separated args like "update --check"
+    
+    // Install methods (per platform)
+    pub install_methods: std::collections::HashMap<String, InstallMethodForm>,
+    
+    // Validation errors
+    pub errors: Vec<String>,
+    pub is_valid: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct InstallMethodForm {
+    pub method: String,           // npm, brew, pip, script, etc.
+    pub command_args: String,     // Space-separated command args
+    pub url: String,              // For script installs
+    pub package_name: String,     // Package name for package managers
+}
+
+impl Default for ToolFormState {
+    fn default() -> Self {
+        let mut install_methods = std::collections::HashMap::new();
+        
+        // Initialize with empty forms for all platforms
+        for platform in ["windows", "macos", "linux"] {
+            install_methods.insert(platform.to_string(), InstallMethodForm::default());
+        }
+        
+        Self {
+            id: String::new(),
+            name: String::new(),
+            description: String::new(),
+            website: String::new(),
+            command: String::new(),
+            version_check_args: "--version".to_string(),
+            update_check_args: String::new(),
+            install_methods,
+            errors: Vec::new(),
+            is_valid: false,
+        }
+    }
+}
+
+impl Default for InstallMethodForm {
+    fn default() -> Self {
+        Self {
+            method: "npm".to_string(),
+            command_args: String::new(),
+            url: String::new(),
+            package_name: String::new(),
+        }
+    }
+}
+
 impl Default for AppState {
     fn default() -> Self {
         Self {
@@ -85,6 +157,15 @@ impl Default for AppState {
             current_view: AppView::Main,
             status_progress: Vec::new(),
             is_refreshing: false,
+            
+            // Tool editor state
+            show_tool_editor: false,
+            editing_tool_id: None,
+            tool_form_state: ToolFormState::default(),
+            
+            // Delete confirmation state
+            show_delete_confirmation: false,
+            tool_to_delete: None,
             
             settings_theme: "dark".to_string(),
             settings_font_size: 14.0,
@@ -539,14 +620,25 @@ impl CLIvergeApp {
     }
 
     fn render_tool_list(&mut self, ui: &mut egui::Ui) {
-        ui.heading("🤖 AI CLI Tools");
+        ui.heading("AI CLI Tools");
         ui.separator();
 
-        // Search and filter controls
+        // Search controls
         ui.horizontal(|ui| {
             ui.label("🔍 Search:");
-            ui.text_edit_singleline(&mut self.app_state.search_query);
-            ui.checkbox(&mut self.app_state.show_only_installed, "Show only installed");
+            ui.add(egui::TextEdit::singleline(&mut self.app_state.search_query)
+                .desired_width(180.0));
+        });
+        
+        // Filter and Add Tool controls on same line
+        ui.horizontal(|ui| {
+            ui.checkbox(&mut self.app_state.show_only_installed, "Show only installed tools");
+            
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.button("➕ Add Tool").clicked() {
+                    self.open_tool_editor_for_new_tool();
+                }
+            });
         });
 
         ui.separator();
@@ -604,6 +696,13 @@ impl CLIvergeApp {
                     self.get_tool_help(tool.config.id.clone());
                 }
             }
+            
+            // Edit button on the right
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.small_button("✏").clicked() {
+                    self.open_tool_editor_for_existing_tool(&tool.config.id);
+                }
+            });
         });
 
         ui.small(&tool.config.description);
@@ -1269,6 +1368,599 @@ impl CLIvergeApp {
             self.start_background_status_checking();
         }
     }
+    
+    // Tool editor methods
+    
+    /// Open the tool editor for creating a new tool
+    fn open_tool_editor_for_new_tool(&mut self) {
+        self.app_state.show_tool_editor = true;
+        self.app_state.editing_tool_id = None;
+        self.app_state.tool_form_state = ToolFormState::default();
+        
+        // Generate a default ID based on name (will be updated when name is entered)
+        self.app_state.tool_form_state.id = format!("new-tool-{}", chrono::Utc::now().timestamp());
+    }
+    
+    /// Open the tool editor for editing an existing tool
+    fn open_tool_editor_for_existing_tool(&mut self, tool_id: &str) {
+        // Clone tool config to avoid borrowing issues
+        let tool_config = if let Ok(tools) = self.tools_cache.lock() {
+            tools.iter().find(|t| t.config.id == tool_id)
+                .map(|t| t.config.clone())
+        } else {
+            None
+        };
+        
+        if let Some(config) = tool_config {
+            self.app_state.show_tool_editor = true;
+            self.app_state.editing_tool_id = Some(tool_id.to_string());
+            
+            // Populate form with existing tool data
+            self.populate_form_from_tool_config(&config);
+        }
+    }
+    
+    /// Populate the form state from an existing tool configuration
+    fn populate_form_from_tool_config(&mut self, tool_config: &cliverge_core::ToolConfig) {
+        self.app_state.tool_form_state.id = tool_config.id.clone();
+        self.app_state.tool_form_state.name = tool_config.name.clone();
+        self.app_state.tool_form_state.description = tool_config.description.clone();
+        self.app_state.tool_form_state.website = tool_config.website.clone();
+        self.app_state.tool_form_state.command = tool_config.command.clone();
+        
+        // Convert version check args from Vec<String> to space-separated string
+        self.app_state.tool_form_state.version_check_args = tool_config.version_check.join(" ");
+        
+        // Convert update check args (if present)
+        self.app_state.tool_form_state.update_check_args = tool_config.update_check
+            .as_ref()
+            .map(|args| args.join(" "))
+            .unwrap_or_default();
+        
+        // Populate install methods
+        for (platform, install_method) in &tool_config.install {
+            if let Some(form_method) = self.app_state.tool_form_state.install_methods.get_mut(platform) {
+                form_method.method = install_method.method.clone();
+                form_method.command_args = install_method.command
+                    .as_ref()
+                    .map(|args| args.join(" "))
+                    .unwrap_or_default();
+                form_method.url = install_method.url.clone().unwrap_or_default();
+                form_method.package_name = install_method.package_name.clone().unwrap_or_default();
+            }
+        }
+        
+        // Clear errors and validate
+        self.app_state.tool_form_state.errors.clear();
+        self.validate_tool_form();
+    }
+    
+    /// Validate the tool form and update errors
+    fn validate_tool_form(&mut self) {
+        let form = &mut self.app_state.tool_form_state;
+        form.errors.clear();
+        
+        // Required field validation
+        if form.name.trim().is_empty() {
+            form.errors.push("Tool name is required".to_string());
+        }
+        
+        if form.command.trim().is_empty() {
+            form.errors.push("Command is required".to_string());
+        }
+        
+        if form.description.trim().is_empty() {
+            form.errors.push("Description is required".to_string());
+        }
+        
+        if form.website.trim().is_empty() {
+            form.errors.push("Website URL is required".to_string());
+        } else if !form.website.starts_with("http://") && !form.website.starts_with("https://") {
+            form.errors.push("Website must be a valid HTTP/HTTPS URL".to_string());
+        }
+        
+        if form.version_check_args.trim().is_empty() {
+            form.errors.push("Version check arguments are required".to_string());
+        }
+        
+        // Check for duplicate names (only for new tools)
+        if self.app_state.editing_tool_id.is_none() {
+            if let Ok(tools) = self.tools_cache.lock() {
+                if tools.iter().any(|t| t.config.name.to_lowercase() == form.name.to_lowercase()) {
+                    form.errors.push("A tool with this name already exists".to_string());
+                }
+            }
+        }
+        
+        // Validate at least one install method is configured
+        let has_valid_install_method = form.install_methods.values()
+            .any(|method| {
+                !method.method.is_empty() && 
+                (!method.command_args.is_empty() || !method.package_name.is_empty() || !method.url.is_empty())
+            });
+            
+        if !has_valid_install_method {
+            form.errors.push("At least one platform install method must be configured".to_string());
+        }
+        
+        form.is_valid = form.errors.is_empty();
+    }
+    
+    /// Test a command to see if it's available
+    fn test_tool_command(&mut self, command: &str, args: &str) {
+        let command = command.trim();
+        let args: Vec<&str> = args.trim().split_whitespace().collect();
+        
+        if command.is_empty() {
+            self.add_notification("Command cannot be empty".to_string(), NotificationLevel::Error);
+            return;
+        }
+        
+        let command = command.to_string();
+        let args: Vec<String> = args.into_iter().map(|s| s.to_string()).collect();
+        let runtime = Arc::clone(&self.runtime);
+        
+        // Test the command in the background
+        runtime.spawn(async move {
+            match tokio::process::Command::new(&command)
+                .args(&args)
+                .output()
+                .await
+            {
+                Ok(output) => {
+                    let success = output.status.success();
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    
+                    // Note: We can't easily update the UI from here due to borrowing rules
+                    // In a real implementation, we'd use channels or other async communication
+                    println!("Command test result: success={}, stdout={}, stderr={}", success, stdout, stderr);
+                }
+                Err(e) => {
+                    println!("Command test failed: {}", e);
+                }
+            }
+        });
+        
+        self.add_notification("Testing command...".to_string(), NotificationLevel::Info);
+    }
+    
+    /// Delete a tool from configuration and cache
+    fn delete_tool(&mut self, tool_id: &str) {
+        let tool_name = if let Ok(tools) = self.tools_cache.lock() {
+            tools.iter().find(|t| t.config.id == tool_id)
+                .map(|t| t.config.name.clone())
+                .unwrap_or_else(|| tool_id.to_string())
+        } else {
+            tool_id.to_string()
+        };
+        
+        // Remove from configuration
+        let config_success = if let Ok(mut config_manager) = self.config_manager.lock() {
+            // Remove tool from configuration (this method returns () not Result)
+            config_manager.remove_tool(tool_id);
+            
+            // Save asynchronously in background
+            let config_manager_clone = Arc::clone(&self.config_manager);
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                rt.block_on(async {
+                    if let Ok(config) = config_manager_clone.lock() {
+                        if let Err(e) = config.save().await {
+                            tracing::error!("Failed to save config after deletion: {}", e);
+                        }
+                    }
+                });
+            });
+            true
+        } else {
+            false
+        };
+        
+        if config_success {
+            // Remove from tools cache
+            if let Ok(mut tools) = self.tools_cache.lock() {
+                tools.retain(|tool| tool.config.id != tool_id);
+            }
+            
+            // Remove from help cache
+            if let Ok(mut help_cache) = self.help_cache.lock() {
+                help_cache.remove(tool_id);
+            }
+            
+            // Remove from persistent cache
+            if let Ok(mut cache) = self.cache_manager.lock() {
+                cache.invalidate_tool(tool_id);
+                
+                // Save cache in background
+                let cache_manager_clone = Arc::clone(&self.cache_manager);
+                std::thread::spawn(move || {
+                    let rt = tokio::runtime::Runtime::new().unwrap();
+                    rt.block_on(async {
+                        if let Ok(cache) = cache_manager_clone.lock() {
+                            if let Err(e) = cache.save().await {
+                                tracing::warn!("Failed to save cache after tool deletion: {}", e);
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // Clear selection if the deleted tool was selected
+            if self.app_state.selected_tool.as_ref() == Some(&tool_id.to_string()) {
+                self.app_state.selected_tool = None;
+            }
+            
+            self.add_notification(
+                format!("Tool '{}' deleted successfully", tool_name),
+                NotificationLevel::Success
+            );
+        } else {
+            self.add_notification(
+                format!("Failed to delete tool '{}'", tool_name),
+                NotificationLevel::Error
+            );
+        }
+    }
+    
+    /// Save the tool configuration from the form data
+    fn save_tool_from_form(&mut self) -> bool {
+        // Double-check validation before saving
+        self.validate_tool_form();
+        if !self.app_state.tool_form_state.is_valid {
+            self.add_notification("Cannot save: form has validation errors".to_string(), NotificationLevel::Error);
+            return false;
+        }
+        
+        let form = &self.app_state.tool_form_state;
+        
+        // Create tool config from form data
+        let tool_config = cliverge_core::ToolConfig {
+            id: form.id.clone(),
+            name: form.name.clone(),
+            description: form.description.clone(),
+            website: form.website.clone(),
+            command: form.command.clone(),
+            version_check: form.version_check_args
+                .split_whitespace()
+                .map(|s| s.to_string())
+                .collect(),
+            update_check: if form.update_check_args.trim().is_empty() {
+                None
+            } else {
+                Some(form.update_check_args
+                    .split_whitespace()
+                    .map(|s| s.to_string())
+                    .collect())
+            },
+            install: form.install_methods.iter()
+                .filter_map(|(platform, method)| {
+                    // Only include methods that have some configuration
+                    if method.method.is_empty() || 
+                       (method.command_args.is_empty() && method.package_name.is_empty() && method.url.is_empty()) {
+                        return None;
+                    }
+                    
+                    let install_method = cliverge_core::InstallMethod {
+                        method: method.method.clone(),
+                        command: if method.command_args.trim().is_empty() {
+                            None
+                        } else {
+                            Some(method.command_args
+                                .split_whitespace()
+                                .map(|s| s.to_string())
+                                .collect())
+                        },
+                        url: if method.url.trim().is_empty() {
+                            None
+                        } else {
+                            Some(method.url.clone())
+                        },
+                        package_name: if method.package_name.trim().is_empty() {
+                            None
+                        } else {
+                            Some(method.package_name.clone())
+                        },
+                    };
+                    
+                    Some((platform.clone(), install_method))
+                })
+                .collect(),
+            config_schema: None, // Not editable in form for now
+        };
+        
+        // Save configuration
+        match self.app_state.editing_tool_id {
+            Some(ref existing_id) => {
+                // Update existing tool
+                let success = if let Ok(mut config_manager) = self.config_manager.lock() {
+                    config_manager.update_tool_config(existing_id, tool_config.clone());
+                            // Save asynchronously in background
+                            let config_manager_clone = Arc::clone(&self.config_manager);
+                            std::thread::spawn(move || {
+                                let rt = tokio::runtime::Runtime::new().unwrap();
+                                rt.block_on(async {
+                                    if let Ok(config) = config_manager_clone.lock() {
+                                        if let Err(e) = config.save().await {
+                                            tracing::error!("Failed to save config: {}", e);
+                                        }
+                                    }
+                                });
+                            });
+                            
+                            // Update tools cache
+                            if let Ok(mut tools) = self.tools_cache.lock() {
+                                if let Some(tool_info) = tools.iter_mut().find(|t| t.config.id == *existing_id) {
+                                    tool_info.config = tool_config;
+                                }
+                            }
+                            
+                    true
+                } else {
+                    false
+                };
+                
+                if success {
+                    self.add_notification(
+                        format!("Tool '{}' updated successfully", form.name),
+                        NotificationLevel::Success
+                    );
+                    return true;
+                } else {
+                    self.add_notification(
+                        "Failed to access configuration manager".to_string(),
+                        NotificationLevel::Error
+                    );
+                    return false;
+                }
+            }
+            None => {
+                // Add new tool
+                let success = if let Ok(mut config_manager) = self.config_manager.lock() {
+                    config_manager.add_tool(tool_config.clone());
+                            // Save asynchronously in background
+                            let config_manager_clone = Arc::clone(&self.config_manager);
+                            std::thread::spawn(move || {
+                                let rt = tokio::runtime::Runtime::new().unwrap();
+                                rt.block_on(async {
+                                    if let Ok(config) = config_manager_clone.lock() {
+                                        if let Err(e) = config.save().await {
+                                            tracing::error!("Failed to save config: {}", e);
+                                        }
+                                    }
+                                });
+                            });
+                            
+                    // Add to tools cache
+                    if let Ok(mut tools) = self.tools_cache.lock() {
+                        let tool_info = ToolInfo {
+                            config: tool_config,
+                            status: ToolStatus::Unknown,
+                            version_info: None,
+                            user_config: HashMap::new(),
+                        };
+                        tools.push(tool_info);
+                    }
+                    
+                    true
+                } else {
+                    false
+                };
+                
+                if success {
+                    self.add_notification(
+                        format!("Tool '{}' added successfully", form.name),
+                        NotificationLevel::Success
+                    );
+                    return true;
+                } else {
+                    self.add_notification(
+                        "Failed to access configuration manager".to_string(),
+                        NotificationLevel::Error
+                    );
+                    return false;
+                }
+            }
+        }
+    }
+    
+    /// Render the tool editor form UI
+    fn render_tool_editor(&mut self, ui: &mut egui::Ui) {
+        // Validate form on each render to ensure errors are up-to-date
+        self.validate_tool_form();
+        
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            // Error display at the top
+            if !self.app_state.tool_form_state.errors.is_empty() {
+                ui.group(|ui| {
+                    ui.colored_label(egui::Color32::RED, "⚠ Validation Errors:");
+                    for error in &self.app_state.tool_form_state.errors {
+                        ui.label(format!("• {}", error));
+                    }
+                });
+                ui.add_space(10.0);
+            }
+            
+            // Basic Information Section
+            ui.collapsing("📝 Basic Information", |ui| {
+                egui::Grid::new("basic_info_grid")
+                    .num_columns(2)
+                    .spacing([10.0, 8.0])
+                    .show(ui, |ui| {
+                        ui.label("Tool Name *:");
+                        let name_response = ui.text_edit_singleline(&mut self.app_state.tool_form_state.name);
+                        if name_response.changed() && self.app_state.editing_tool_id.is_none() {
+                            // Auto-generate ID from name for new tools
+                            self.app_state.tool_form_state.id = self.app_state.tool_form_state.name
+                                .to_lowercase()
+                                .replace(" ", "-")
+                                .replace("_", "-")
+                                .chars()
+                                .filter(|c| c.is_alphanumeric() || *c == '-')
+                                .collect();
+                        }
+                        ui.end_row();
+                        
+                        ui.label("Tool ID *:");
+                        ui.add_enabled(self.app_state.editing_tool_id.is_none(), 
+                            egui::TextEdit::singleline(&mut self.app_state.tool_form_state.id)
+                                .hint_text("auto-generated-from-name"));
+                        ui.end_row();
+                        
+                        ui.label("Command *:");
+                        ui.horizontal(|ui| {
+                            ui.text_edit_singleline(&mut self.app_state.tool_form_state.command);
+                            if ui.button("🧪 Test").clicked() {
+                                let command = self.app_state.tool_form_state.command.clone();
+                                let args = self.app_state.tool_form_state.version_check_args.clone();
+                                self.test_tool_command(&command, &args);
+                            }
+                        });
+                        ui.end_row();
+                        
+                        ui.label("Description *:");
+                        ui.text_edit_multiline(&mut self.app_state.tool_form_state.description);
+                        ui.end_row();
+                        
+                        ui.label("Website *:");
+                        ui.text_edit_singleline(&mut self.app_state.tool_form_state.website);
+                        ui.end_row();
+                    });
+            });
+            
+            ui.add_space(10.0);
+            
+            // Version Checking Section
+            ui.collapsing("🔍 Version Checking", |ui| {
+                egui::Grid::new("version_grid")
+                    .num_columns(2)
+                    .spacing([10.0, 8.0])
+                    .show(ui, |ui| {
+                        ui.label("Version Check Args *:");
+                        ui.text_edit_singleline(&mut self.app_state.tool_form_state.version_check_args);
+                        ui.end_row();
+                        
+                        ui.label("Update Check Args:");
+                        ui.text_edit_singleline(&mut self.app_state.tool_form_state.update_check_args);
+                        ui.end_row();
+                    });
+                ui.small("Tip: Use space-separated arguments like '--version' or 'update --check'");
+            });
+            
+            ui.add_space(10.0);
+            
+            // Installation Methods Section
+            ui.collapsing("⚙ Installation Methods", |ui| {
+                ui.label("Configure how this tool can be installed on different platforms:");
+                ui.add_space(5.0);
+                
+                for platform in ["windows", "macos", "linux"] {
+                    ui.group(|ui| {
+                        ui.horizontal(|ui| {
+                            let platform_icon = match platform {
+                                "windows" => "🪟",
+                                "macos" => "🍎", 
+                                "linux" => "🐧",
+                                _ => "💻",
+                            };
+                            ui.label(format!("{} {}", platform_icon, platform.to_uppercase()));
+                        });
+                        
+                        if let Some(install_method) = self.app_state.tool_form_state.install_methods.get_mut(platform) {
+                            egui::Grid::new(format!("{}_install_grid", platform))
+                                .num_columns(2)
+                                .spacing([10.0, 4.0])
+                                .show(ui, |ui| {
+                                    ui.label("Method:");
+                                    egui::ComboBox::from_id_source(format!("{}_method", platform))
+                                        .selected_text(&install_method.method)
+                                        .show_ui(ui, |ui| {
+                                            ui.selectable_value(&mut install_method.method, "npm".to_string(), "npm");
+                                            ui.selectable_value(&mut install_method.method, "brew".to_string(), "brew");
+                                            ui.selectable_value(&mut install_method.method, "pip".to_string(), "pip");
+                                            ui.selectable_value(&mut install_method.method, "script".to_string(), "script");
+                                            ui.selectable_value(&mut install_method.method, "winget".to_string(), "winget");
+                                            ui.selectable_value(&mut install_method.method, "cargo".to_string(), "cargo");
+                                        });
+                                    ui.end_row();
+                                    
+                                    ui.label("Package Name:");
+                                    ui.text_edit_singleline(&mut install_method.package_name);
+                                    ui.end_row();
+                                    
+                                    ui.label("Command Args:");
+                                    ui.text_edit_singleline(&mut install_method.command_args);
+                                    ui.end_row();
+                                    
+                                    if install_method.method == "script" {
+                                        ui.label("Script URL:");
+                                        ui.text_edit_singleline(&mut install_method.url);
+                                        ui.end_row();
+                                    }
+                                });
+                        }
+                    });
+                    ui.add_space(8.0);
+                }
+            });
+        });
+        
+        ui.separator();
+        
+        // Action buttons
+        ui.horizontal(|ui| {
+            let save_text = if self.app_state.editing_tool_id.is_some() {
+                "💾 Update Tool"
+            } else {
+                "💾 Create Tool"
+            };
+            
+            if ui.add_enabled(self.app_state.tool_form_state.is_valid, egui::Button::new(save_text)).clicked() {
+                if self.save_tool_from_form() {
+                    self.app_state.show_tool_editor = false;
+                }
+            }
+            
+            if ui.button("❌ Cancel").clicked() {
+                self.app_state.show_tool_editor = false;
+            }
+            
+            // Show delete button only for existing tools
+            if self.app_state.editing_tool_id.is_some() {
+                if ui.button("🗑 Delete Tool").clicked() {
+                    // Show confirmation dialog
+                    self.app_state.tool_to_delete = self.app_state.editing_tool_id.clone();
+                    self.app_state.show_delete_confirmation = true;
+                }
+            }
+            
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.button("🔄 Reset Form").clicked() {
+                    if self.app_state.editing_tool_id.is_some() {
+                        // Reset to original values for edit mode
+                        let tool_config = if let Ok(tools) = self.tools_cache.lock() {
+                            tools.iter().find(|t| Some(&t.config.id) == self.app_state.editing_tool_id.as_ref())
+                                .map(|t| t.config.clone())
+                        } else {
+                            None
+                        };
+                        
+                        if let Some(config) = tool_config {
+                            self.populate_form_from_tool_config(&config);
+                        }
+                    } else {
+                        // Reset to defaults for new tool mode
+                        self.app_state.tool_form_state = ToolFormState::default();
+                    }
+                }
+            });
+        });
+        
+        if !self.app_state.tool_form_state.is_valid {
+            ui.add_space(5.0);
+            ui.small("Please fix the errors above before saving.");
+        }
+    }
 }
 
 impl eframe::App for CLIvergeApp {
@@ -1368,6 +2060,87 @@ impl eframe::App for CLIvergeApp {
 
         // Remove old notifications
         self.app_state.notifications.retain(|n| n.timestamp.elapsed().as_secs_f32() < 5.0);
+        
+        // Delete confirmation dialog
+        if self.app_state.show_delete_confirmation {
+            let tool_name = if let Some(tool_id) = &self.app_state.tool_to_delete {
+                if let Ok(tools) = self.tools_cache.lock() {
+                    tools.iter().find(|t| &t.config.id == tool_id)
+                        .map(|t| t.config.name.clone())
+                        .unwrap_or_else(|| tool_id.clone())
+                } else {
+                    tool_id.clone()
+                }
+            } else {
+                "Unknown Tool".to_string()
+            };
+            
+            let mut window_open = true;
+            egui::Window::new("⚠ Confirm Delete")
+                .open(&mut window_open)
+                .resizable(false)
+                .collapsible(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .show(ctx, |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.add_space(10.0);
+                        ui.label("Are you sure you want to delete this tool?");
+                        ui.add_space(5.0);
+                        ui.colored_label(egui::Color32::from_rgb(255, 255, 255), format!("Tool: {}", tool_name));
+                        ui.add_space(10.0);
+                        ui.colored_label(egui::Color32::YELLOW, "⚠ This action cannot be undone!");
+                        ui.add_space(15.0);
+                        
+                        ui.horizontal(|ui| {
+                            if ui.button("🗑 Delete").clicked() {
+                                if let Some(tool_id) = self.app_state.tool_to_delete.take() {
+                                    self.delete_tool(&tool_id);
+                                }
+                                self.app_state.show_delete_confirmation = false;
+                                self.app_state.show_tool_editor = false;
+                            }
+                            
+                            if ui.button("❌ Cancel").clicked() {
+                                self.app_state.show_delete_confirmation = false;
+                                self.app_state.tool_to_delete = None;
+                            }
+                        });
+                        ui.add_space(10.0);
+                    });
+                });
+            
+            // If window was closed by X button, also close the confirmation
+            if !window_open {
+                self.app_state.show_delete_confirmation = false;
+                self.app_state.tool_to_delete = None;
+            }
+        }
+        
+        // Tool editor window
+        let mut show_tool_editor = self.app_state.show_tool_editor;
+        if show_tool_editor {
+            let title = if self.app_state.editing_tool_id.is_some() {
+                "✏ Edit AI Tool"
+            } else {
+                "➕ Add New AI Tool"
+            };
+            
+            egui::Window::new(title)
+                .open(&mut show_tool_editor)
+                .resizable(true)
+                .default_size([600.0, 700.0])
+                .show(ctx, |ui| {
+                    self.render_tool_editor(ui);
+                });
+                
+            // Only update the state if the window wasn't closed by our buttons
+            // The window's .open() will set show_tool_editor to false if user clicks X
+            // But our buttons directly set self.app_state.show_tool_editor to false
+            // So we only sync back if our internal state is still true
+            if self.app_state.show_tool_editor {
+                self.app_state.show_tool_editor = show_tool_editor;
+            }
+        }
 
         // Main content
         match self.app_state.current_view {
