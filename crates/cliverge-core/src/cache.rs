@@ -97,8 +97,8 @@ impl CacheManager {
     }
     
     pub fn set_tool_status(&mut self, tool_id: &str, status: ToolStatus) {
-        // 30 minutes TTL for status (was 5 minutes, too short)
-        let entry = CacheEntry::new(status, 1800);
+        // 1 day TTL for status
+        let entry = CacheEntry::new(status, 86400);
         self.cache.status_cache.insert(tool_id.to_string(), entry);
     }
     

@@ -22,6 +22,10 @@ chrono = { workspace = true }
 webbrowser = "0.8"
 image = "0.24"
 
+# Windows resource file for icon
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
+
 [[bin]]
 name = "cliverge"
 path = "src/main.rs"
