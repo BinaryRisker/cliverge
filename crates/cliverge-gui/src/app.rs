@@ -117,6 +117,10 @@ pub struct ToolFormState {
     
     // Install methods (per platform)
     pub install_methods: std::collections::HashMap<String, InstallMethodForm>,
+    // Uninstall methods (per platform)
+    pub uninstall_methods: std::collections::HashMap<String, InstallMethodForm>,
+    // Update methods (per platform)
+    pub update_methods: std::collections::HashMap<String, InstallMethodForm>,
     
     // Validation errors
     pub errors: Vec<String>,
@@ -134,10 +138,14 @@ pub struct InstallMethodForm {
 impl Default for ToolFormState {
     fn default() -> Self {
         let mut install_methods = std::collections::HashMap::new();
+        let mut uninstall_methods = std::collections::HashMap::new();
+        let mut update_methods = std::collections::HashMap::new();
         
         // Initialize with empty forms for all platforms
         for platform in ["windows", "macos", "linux"] {
             install_methods.insert(platform.to_string(), InstallMethodForm::default());
+            uninstall_methods.insert(platform.to_string(), InstallMethodForm::default());
+            update_methods.insert(platform.to_string(), InstallMethodForm::default());
         }
         
         Self {
@@ -149,6 +157,8 @@ impl Default for ToolFormState {
             version_check_args: "--version".to_string(),
             update_check_args: String::new(),
             install_methods,
+            uninstall_methods,
+            update_methods,
             errors: Vec::new(),
             is_valid: false,
         }
@@ -1564,6 +1574,77 @@ impl CLIvergeApp {
         }
     }
 
+    fn render_method_form(ui: &mut egui::Ui, method: &mut InstallMethodForm, id_prefix: &str) {
+        egui::Grid::new(format!("{}_grid", id_prefix))
+            .num_columns(2)
+            .spacing([10.0, 4.0])
+            .show(ui, |ui| {
+                ui.label("Method:");
+                egui::ComboBox::from_id_source(format!("{}_method", id_prefix))
+                    .selected_text(&method.method)
+                    .show_ui(ui, |ui| {
+                        // 跨平台包管理器
+                        ui.selectable_value(&mut method.method, "npm".to_string(), "npm (Node.js)");
+                        ui.selectable_value(&mut method.method, "pip".to_string(), "pip (Python)");
+                        ui.selectable_value(&mut method.method, "cargo".to_string(), "cargo (Rust)");
+                        ui.selectable_value(&mut method.method, "go".to_string(), "go (Go)");
+                        ui.selectable_value(&mut method.method, "gem".to_string(), "gem (Ruby)");
+                        
+                        ui.separator();
+                        
+                        // Windows 包管理器
+                        ui.selectable_value(&mut method.method, "winget".to_string(), "winget (Windows)");
+                        ui.selectable_value(&mut method.method, "choco".to_string(), "choco (Chocolatey)");
+                        ui.selectable_value(&mut method.method, "scoop".to_string(), "scoop (Scoop)");
+                        ui.selectable_value(&mut method.method, "powershell".to_string(), "powershell (PowerShell)");
+                        
+                        ui.separator();
+                        
+                        // macOS 包管理器
+                        ui.selectable_value(&mut method.method, "brew".to_string(), "brew (Homebrew)");
+                        ui.selectable_value(&mut method.method, "port".to_string(), "port (MacPorts)");
+                        
+                        ui.separator();
+                        
+                        // Linux 包管理器
+                        ui.selectable_value(&mut method.method, "apt".to_string(), "apt (Debian/Ubuntu)");
+                        ui.selectable_value(&mut method.method, "yum".to_string(), "yum (RHEL/CentOS)");
+                        ui.selectable_value(&mut method.method, "dnf".to_string(), "dnf (Fedora)");
+                        ui.selectable_value(&mut method.method, "pacman".to_string(), "pacman (Arch)");
+                        ui.selectable_value(&mut method.method, "zypper".to_string(), "zypper (openSUSE)");
+                        ui.selectable_value(&mut method.method, "emerge".to_string(), "emerge (Gentoo)");
+                        ui.selectable_value(&mut method.method, "apk".to_string(), "apk (Alpine)");
+                        ui.selectable_value(&mut method.method, "snap".to_string(), "snap (Snapcraft)");
+                        ui.selectable_value(&mut method.method, "flatpak".to_string(), "flatpak (Flatpak)");
+                        ui.selectable_value(&mut method.method, "appimage".to_string(), "appimage (AppImage)");
+                        
+                        ui.separator();
+                        
+                        // 通用方法
+                        ui.selectable_value(&mut method.method, "curl".to_string(), "curl (Download)");
+                        ui.selectable_value(&mut method.method, "wget".to_string(), "wget (Download)");
+                        ui.selectable_value(&mut method.method, "script".to_string(), "script (Custom Script)");
+                        ui.selectable_value(&mut method.method, "binary".to_string(), "binary (Direct Binary)");
+                        ui.selectable_value(&mut method.method, "manual".to_string(), "manual (Manual Install)");
+                    });
+                ui.end_row();
+                
+                ui.label("Package Name:");
+                ui.text_edit_singleline(&mut method.package_name);
+                ui.end_row();
+                
+                ui.label("Command Args:");
+                ui.text_edit_singleline(&mut method.command_args);
+                ui.end_row();
+                
+                if method.method == "script" || method.method == "curl" || method.method == "wget" {
+                    ui.label("URL:");
+                    ui.text_edit_singleline(&mut method.url);
+                    ui.end_row();
+            }
+        });
+    }
+
     fn render_about(&mut self, ui: &mut egui::Ui) {
         ui.vertical_centered(|ui| {
             ui.heading("ℹ About CLIverge");
@@ -2338,37 +2419,61 @@ impl CLIvergeApp {
                         });
                         
                         if let Some(install_method) = self.app_state.tool_form_state.install_methods.get_mut(platform) {
-                            egui::Grid::new(format!("{}_install_grid", platform))
-                                .num_columns(2)
-                                .spacing([10.0, 4.0])
-                                .show(ui, |ui| {
-                                    ui.label("Method:");
-                                    egui::ComboBox::from_id_source(format!("{}_method", platform))
-                                        .selected_text(&install_method.method)
-                                        .show_ui(ui, |ui| {
-                                            ui.selectable_value(&mut install_method.method, "npm".to_string(), "npm");
-                                            ui.selectable_value(&mut install_method.method, "brew".to_string(), "brew");
-                                            ui.selectable_value(&mut install_method.method, "pip".to_string(), "pip");
-                                            ui.selectable_value(&mut install_method.method, "script".to_string(), "script");
-                                            ui.selectable_value(&mut install_method.method, "winget".to_string(), "winget");
-                                            ui.selectable_value(&mut install_method.method, "cargo".to_string(), "cargo");
-                                        });
-                                    ui.end_row();
-                                    
-                                    ui.label("Package Name:");
-                                    ui.text_edit_singleline(&mut install_method.package_name);
-                                    ui.end_row();
-                                    
-                                    ui.label("Command Args:");
-                                    ui.text_edit_singleline(&mut install_method.command_args);
-                                    ui.end_row();
-                                    
-                                    if install_method.method == "script" {
-                                        ui.label("Script URL:");
-                                        ui.text_edit_singleline(&mut install_method.url);
-                                        ui.end_row();
-                                    }
-                                });
+                            Self::render_method_form(ui, install_method, &format!("{}_install", platform));
+                        }
+                    });
+                    ui.add_space(8.0);
+                }
+            });
+            
+            ui.add_space(10.0);
+            
+            // Uninstallation Methods Section
+            ui.collapsing("🗑 Uninstallation Methods", |ui| {
+                ui.label("Configure how this tool can be uninstalled on different platforms:");
+                ui.add_space(5.0);
+                
+                for platform in ["windows", "macos", "linux"] {
+                    ui.group(|ui| {
+                        ui.horizontal(|ui| {
+                            let platform_icon = match platform {
+                                "windows" => "🪟",
+                                "macos" => "🍎", 
+                                "linux" => "🐧",
+                                _ => "💻",
+                            };
+                            ui.label(format!("{} {}", platform_icon, platform.to_uppercase()));
+                        });
+                        
+                        if let Some(uninstall_method) = self.app_state.tool_form_state.uninstall_methods.get_mut(platform) {
+                            Self::render_method_form(ui, uninstall_method, &format!("{}_uninstall", platform));
+                        }
+                    });
+                    ui.add_space(8.0);
+                }
+            });
+            
+            ui.add_space(10.0);
+            
+            // Update Methods Section
+            ui.collapsing("🔄 Update Methods", |ui| {
+                ui.label("Configure how this tool can be updated on different platforms:");
+                ui.add_space(5.0);
+                
+                for platform in ["windows", "macos", "linux"] {
+                    ui.group(|ui| {
+                        ui.horizontal(|ui| {
+                            let platform_icon = match platform {
+                                "windows" => "🪟",
+                                "macos" => "🍎", 
+                                "linux" => "🐧",
+                                _ => "💻",
+                            };
+                            ui.label(format!("{} {}", platform_icon, platform.to_uppercase()));
+                        });
+                        
+                        if let Some(update_method) = self.app_state.tool_form_state.update_methods.get_mut(platform) {
+                            Self::render_method_form(ui, update_method, &format!("{}_update", platform));
                         }
                     });
                     ui.add_space(8.0);
