@@ -49,15 +49,35 @@ pub enum ProgressStatus {
     Failed,
 }
 
+#[derive(Debug, Clone)]
+pub struct InstallProgress {
+    pub tool_id: String,
+    pub tool_name: String,
+    pub operation: InstallOperation,
+    pub status: ProgressStatus,
+    pub message: String,
+    pub command: Option<String>, // 用于显示执行的命令
+    pub timestamp: Instant,
+}
+
+#[derive(Debug, Clone)]
+pub enum InstallOperation {
+    Install,
+    Uninstall,
+    #[allow(dead_code)] // 为未来的更新功能预留
+    Update,
+}
+
 pub struct AppState {
     // UI State
     pub selected_tool: Option<String>,
     pub search_query: String,
     pub show_only_installed: bool,
-    pub log_window_open: bool,
+    pub bottom_log_panel_open: bool, // 修改此行：从 log_window_open 改名
     pub notifications: Vec<Notification>,
     pub current_view: AppView,
     pub status_progress: Vec<StatusCheckProgress>,
+    pub install_progress: Vec<InstallProgress>, // 新增此行
     pub is_refreshing: bool,
     
     // Tool configuration editor state
@@ -152,10 +172,11 @@ impl Default for AppState {
             selected_tool: None,
             search_query: String::new(),
             show_only_installed: false,
-            log_window_open: false,
+            bottom_log_panel_open: true, // 修改此行，默认打开
             notifications: Vec::new(),
             current_view: AppView::Main,
             status_progress: Vec::new(),
+            install_progress: Vec::new(), // 新增此行
             is_refreshing: false,
             
             // Tool editor state
@@ -191,6 +212,8 @@ pub struct CLIvergeApp {
     help_cache: Arc<Mutex<HashMap<String, String>>>,
     progress_sender: Arc<Mutex<Option<tokio::sync::mpsc::UnboundedSender<StatusCheckProgress>>>>,
     progress_receiver: Arc<Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<StatusCheckProgress>>>>,
+    install_sender: Arc<Mutex<Option<tokio::sync::mpsc::UnboundedSender<InstallProgress>>>>, // 新增此行
+    install_receiver: Arc<Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<InstallProgress>>>>, // 新增此行
     ctx: Option<egui::Context>,
 }
 
@@ -225,6 +248,7 @@ impl CLIvergeApp {
 
         // Create progress channel
         let (progress_sender, progress_receiver) = tokio::sync::mpsc::unbounded_channel();
+        let (install_sender, install_receiver) = tokio::sync::mpsc::unbounded_channel(); // 新增此行
 
         let mut app = Self {
             config_manager: Arc::clone(&config_manager),
@@ -237,6 +261,8 @@ impl CLIvergeApp {
             help_cache: Arc::new(Mutex::new(HashMap::new())),
             progress_sender: Arc::new(Mutex::new(Some(progress_sender))),
             progress_receiver: Arc::new(Mutex::new(Some(progress_receiver))),
+            install_sender: Arc::new(Mutex::new(Some(install_sender))), // 新增此行
+            install_receiver: Arc::new(Mutex::new(Some(install_receiver))), // 新增此行
             ctx: None,
         };
 
@@ -484,6 +510,7 @@ impl CLIvergeApp {
     }
 
     fn update_progress(&mut self) {
+        // 更新状态检查进度 (原有逻辑)
         if let Ok(mut receiver_guard) = self.progress_receiver.lock() {
             if let Some(receiver) = receiver_guard.as_mut() {
                 while let Ok(progress) = receiver.try_recv() {
@@ -506,6 +533,34 @@ impl CLIvergeApp {
                         *existing = updated_progress;
                     } else {
                         self.app_state.status_progress.push(updated_progress);
+                    }
+                }
+            }
+        }
+
+        // 新增：更新安装进度
+        if let Ok(mut receiver_guard) = self.install_receiver.lock() {
+            if let Some(receiver) = receiver_guard.as_mut() {
+                while let Ok(progress) = receiver.try_recv() {
+                    // 更新工具名称从缓存
+                    let tool_name = if let Ok(tools) = self.tools_cache.lock() {
+                        tools.iter()
+                            .find(|tool| tool.config.id == progress.tool_id)
+                            .map(|tool| tool.config.name.clone())
+                            .unwrap_or_else(|| progress.tool_id.clone())
+                    } else {
+                        progress.tool_id.clone()
+                    };
+
+                    let mut updated_progress = progress;
+                    updated_progress.tool_name = tool_name;
+
+                    // 更新或添加安装进度条目
+                    if let Some(existing) = self.app_state.install_progress.iter_mut()
+                        .find(|p| p.tool_id == updated_progress.tool_id && std::mem::discriminant(&p.operation) == std::mem::discriminant(&updated_progress.operation)) {
+                        *existing = updated_progress;
+                    } else {
+                        self.app_state.install_progress.push(updated_progress);
                     }
                 }
             }
@@ -773,7 +828,7 @@ impl CLIvergeApp {
                 }
                 ToolStatus::NotInstalled => {
                     if ui.button("📥 Install").clicked() {
-                        // TODO: Implement install functionality
+                        self.install_tool(tool.config.id.clone());
                         self.add_notification("Installation started".to_string(), NotificationLevel::Info);
                     }
                 }
@@ -781,7 +836,7 @@ impl CLIvergeApp {
                     ui.label(format!("Version: {}", version));
                     
                     if ui.button("🗑 Uninstall").clicked() {
-                        // TODO: Implement uninstall functionality
+                        self.uninstall_tool(tool.config.id.clone());
                         self.add_notification("Uninstallation started".to_string(), NotificationLevel::Info);
                     }
                     
@@ -1047,52 +1102,466 @@ impl CLIvergeApp {
         });
     }
 
-    fn render_progress_log(&mut self, ui: &mut egui::Ui) {
-        ui.heading("🔍 Tool Status Checks");
+    fn render_comprehensive_log(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.heading("📊 Operations Log");
+            
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.button("🧹 Clear All").clicked() {
+                    self.app_state.status_progress.clear();
+                    self.app_state.install_progress.clear();
+                }
+                
+                if ui.button("📋 Copy All").clicked() {
+                    let all_logs = self.get_all_logs_as_text();
+                    ui.output_mut(|o| o.copied_text = all_logs);
+                }
+                
+                if ui.button("🔄 Refresh Tools").clicked() {
+                    self.refresh_tools_with_progress();
+                }
+                
+                let toggle_text = if self.app_state.bottom_log_panel_open {
+                    "⬇ Hide Log"
+                } else {
+                    "⬆ Show Log"
+                };
+                if ui.button(toggle_text).clicked() {
+                    self.app_state.bottom_log_panel_open = !self.app_state.bottom_log_panel_open;
+                }
+            });
+        });
+
+        if !self.app_state.bottom_log_panel_open {
+            return;
+        }
+
         ui.separator();
 
-        if self.app_state.status_progress.is_empty() {
+        // 创建合并的日志条目
+        let mut combined_entries: Vec<(Instant, String)> = Vec::new();
+
+        // 添加状态检查条目
+        for progress in &self.app_state.status_progress {
+            let (icon, _color_name) = match &progress.status {
+                ProgressStatus::Pending => ("⏳", "GRAY"),
+                ProgressStatus::InProgress => ("🔄", "BLUE"),
+                ProgressStatus::Completed => ("✅", "GREEN"),
+                ProgressStatus::Failed => ("❌", "RED"),
+            };
+            
+            let entry = format!("[STATUS] {} {} - {}", icon, progress.tool_name, progress.message);
+            combined_entries.push((progress.timestamp, entry));
+        }
+
+        // 添加安装进度条目
+        for progress in &self.app_state.install_progress {
+            let (icon, _color_name) = match &progress.status {
+                ProgressStatus::Pending => ("⏳", "GRAY"),
+                ProgressStatus::InProgress => ("🔄", "BLUE"), 
+                ProgressStatus::Completed => ("✅", "GREEN"),
+                ProgressStatus::Failed => ("❌", "RED"),
+            };
+            
+            let operation = match &progress.operation {
+                InstallOperation::Install => "INSTALL",
+                InstallOperation::Uninstall => "UNINSTALL",
+                InstallOperation::Update => "UPDATE",
+            };
+            
+            let mut entry = format!("[{}] {} {} - {}", operation, icon, progress.tool_name, progress.message);
+            
+            // 添加命令信息（如果可用）
+            if let Some(command) = &progress.command {
+                entry.push_str(&format!("\n   Command: {}", command));
+            }
+            
+            combined_entries.push((progress.timestamp, entry));
+        }
+
+        // 按时间戳排序（最新的在最后）
+        combined_entries.sort_by_key(|&(timestamp, _)| timestamp);
+
+        if combined_entries.is_empty() {
             ui.centered_and_justified(|ui| {
-                ui.label("No status checks in progress. Click 'Refresh' to start checking tool statuses.");
+                ui.label("No operations logged yet. Install, uninstall, or refresh tools to see activity here.");
             });
             return;
         }
 
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            for progress in &self.app_state.status_progress {
-                ui.group(|ui| {
-                    ui.horizontal(|ui| {
-                        let (icon, color) = match &progress.status {
-                            ProgressStatus::Pending => ("⏳", egui::Color32::GRAY),
-                            ProgressStatus::InProgress => ("🔄", egui::Color32::BLUE),
-                            ProgressStatus::Completed => ("✅", egui::Color32::GREEN),
-                            ProgressStatus::Failed => ("❌", egui::Color32::RED),
-                        };
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .stick_to_bottom(true)
+            .show(ui, |ui| {
+                for (timestamp, entry) in combined_entries {
+                    // 格式化时间戳为事件发生的实际时间 (HH:MM:SS)
+                    let time_str = {
+                        use chrono::{DateTime, Local};
                         
-                        ui.colored_label(color, icon);
-                        ui.label(&progress.tool_name);
+                        // 计算事件发生的实际时间
+                        let now = std::time::SystemTime::now();
+                        let event_time = now - timestamp.elapsed();
                         
-                        // Show timestamp
-                        let elapsed = progress.timestamp.elapsed().as_secs();
-                        ui.small(format!("{}s ago", elapsed));
-                    });
-                    ui.small(&progress.message);
+                        // 转换为本地日期时间
+                        let datetime: DateTime<Local> = event_time.into();
+                        datetime.format("%H:%M:%S").to_string()
+                    };
+                    
+                    // 处理多行消息（例如，详细的错误消息）
+                    let lines: Vec<&str> = entry.lines().collect();
+                    if lines.len() > 1 {
+                        // 多行消息 - 显示时带缩进
+                        let first_line = format!("[{}] {}", time_str, lines[0]);
+                        let mut first_line_text = first_line.clone();
+                        ui.add(egui::TextEdit::multiline(&mut first_line_text)
+                            .desired_width(f32::INFINITY)
+                            .desired_rows(1)
+                            .interactive(true)
+                            .frame(false));
+                        
+                        // 显示后续行时带缩进  
+                        for line in &lines[1..] {
+                            if !line.trim().is_empty() {
+                                let indented_line = format!("           {}", line.trim());
+                                let mut indented_text = indented_line.clone();
+                                ui.add(egui::TextEdit::multiline(&mut indented_text)
+                                    .desired_width(f32::INFINITY)
+                                    .desired_rows(1)
+                                    .interactive(true)
+                                    .frame(false));
+                            }
+                        }
+                    } else {
+                        // 单行消息 - 使整行可选择
+                        let full_text = format!("[{}] {}", time_str, entry);
+                        let mut text_copy = full_text.clone();
+                        ui.add(egui::TextEdit::multiline(&mut text_copy)
+                            .desired_width(f32::INFINITY)
+                            .desired_rows(1)
+                            .interactive(true)
+                            .frame(false));
+                    }
+                }
+            });
+    }
+
+    pub fn install_tool(&mut self, tool_id: String) {
+        let tool_manager = self.tool_manager.clone();
+        let tools_cache = Arc::clone(&self.tools_cache);
+        let cache_manager = Arc::clone(&self.cache_manager);
+        let runtime = Arc::clone(&self.runtime);
+        let ctx = self.ctx.clone();
+        let sender = if let Ok(sender_guard) = self.install_sender.lock() {
+            sender_guard.clone()
+        } else {
+            None
+        };
+        
+        // 获取安装命令用于显示目的
+        let install_command = if let Ok(tools) = self.tools_cache.lock() {
+            if let Some(tool_info) = tools.iter().find(|t| t.config.id == tool_id) {
+                let platform = std::env::consts::OS;
+                tool_info.config.install.get(platform)
+                    .and_then(|install_method| install_method.command.as_ref())
+                    .map(|cmd| cmd.join(" "))
+                    .or_else(|| {
+                        // 回退：从方法和包名构造命令
+                        tool_info.config.install.get(platform).map(|install_method| {
+                            format!("{} install -g {}", 
+                                install_method.method,
+                                install_method.package_name.as_ref().unwrap_or(&tool_id)
+                            )
+                        })
+                    })
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let handle = runtime.spawn(async move {
+            // 发送进度更新 - 开始
+            if let Some(sender) = &sender {
+                let _ = sender.send(InstallProgress {
+                    tool_id: tool_id.clone(),
+                    tool_name: tool_id.clone(),
+                    operation: InstallOperation::Install,
+                    status: ProgressStatus::InProgress,
+                    message: "Starting installation...".to_string(),
+                    command: install_command.clone(),
+                    timestamp: Instant::now(),
                 });
-                ui.add_space(4.0);
+            }
+
+            match tool_manager.install_tool(&tool_id).await {
+                Ok(_) => {
+                    // 安装后重新检查状态
+                    let new_status = tool_manager.check_tool_status(&tool_id).await;
+                    
+                    // 更新工具缓存状态 
+                    if let Ok(status) = &new_status {
+                        if let Ok(mut tools) = tools_cache.lock() {
+                            for tool in tools.iter_mut() {
+                                if tool.config.id == tool_id {
+                                    tool.status = status.clone();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // 使用我们已经检查的状态更新缓存
+                    if let Ok(status) = &new_status {
+                        let cache_manager_clone = Arc::clone(&cache_manager);
+                        let status_clone = status.clone();
+                        let tool_id_for_cache = tool_id.clone();
+                        
+                        std::thread::spawn(move || {
+                            let rt = tokio::runtime::Runtime::new().unwrap();
+                            rt.block_on(async {
+                                if let Ok(mut cache) = cache_manager_clone.lock() {
+                                    cache.set_tool_status(&tool_id_for_cache, status_clone);
+                                    let _ = cache.save().await;
+                                }
+                            });
+                        });
+                    }
+
+                    // 发送完成进度
+                    if let Some(sender) = &sender {
+                        let _ = sender.send(InstallProgress {
+                            tool_id: tool_id.clone(),
+                            tool_name: tool_id.clone(),
+                            operation: InstallOperation::Install,
+                            status: ProgressStatus::Completed,
+                            message: "Installation completed successfully".to_string(),
+                            command: install_command.clone(),
+                            timestamp: Instant::now(),
+                        });
+                    }
+
+                    if let Some(context) = &ctx {
+                        context.request_repaint();
+                    }
+                }
+                Err(e) => {
+                    // 发送失败进度，包含详细错误信息
+                    if let Some(sender) = &sender {
+                        let _ = sender.send(InstallProgress {
+                            tool_id: tool_id.clone(),
+                            tool_name: tool_id.clone(),
+                            operation: InstallOperation::Install,
+                            status: ProgressStatus::Failed,
+                            message: format!("Installation failed: {}", e),
+                            command: install_command.clone(),
+                            timestamp: Instant::now(),
+                        });
+                    }
+                    
+                    tracing::error!("Installation failed for {}: {}", tool_id, e);
+                }
             }
         });
 
-        ui.separator();
+        if let Ok(mut tasks) = self.background_tasks.lock() {
+            tasks.push(handle);
+        }
+    }
+
+    pub fn uninstall_tool(&mut self, tool_id: String) {
+        let tool_manager = self.tool_manager.clone();
+        let tools_cache = Arc::clone(&self.tools_cache);
+        let cache_manager = Arc::clone(&self.cache_manager);
+        let runtime = Arc::clone(&self.runtime);
+        let ctx = self.ctx.clone();
+        let sender = if let Ok(sender_guard) = self.install_sender.lock() {
+            sender_guard.clone()
+        } else {
+            None
+        };
         
-        ui.horizontal(|ui| {
-            if ui.button("🧹 Clear Log").clicked() {
-                self.app_state.status_progress.clear();
+        // 获取卸载命令用于显示目的
+        let uninstall_command = if let Ok(tools) = self.tools_cache.lock() {
+            if let Some(tool_info) = tools.iter().find(|t| t.config.id == tool_id) {
+                let platform = std::env::consts::OS;
+                if let Some(install_method) = tool_info.config.install.get(platform) {
+                    // 根据安装方法构造卸载命令
+                    match install_method.method.as_str() {
+                        "npm" => install_method.package_name.as_ref()
+                            .map(|pkg| format!("npm uninstall -g {}", pkg)),
+                        "brew" => install_method.package_name.as_ref()
+                            .map(|pkg| format!("brew uninstall {}", pkg)),
+                        "pip" => install_method.package_name.as_ref()
+                            .map(|pkg| format!("pip uninstall -y {}", pkg)),
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
             }
-            
-            if ui.button("🔄 Refresh All").clicked() {
-                self.refresh_tools_with_progress();
+        } else {
+            None
+        };
+
+        let handle = runtime.spawn(async move {
+            // 发送进度更新 - 开始
+            if let Some(sender) = &sender {
+                let _ = sender.send(InstallProgress {
+                    tool_id: tool_id.clone(),
+                    tool_name: tool_id.clone(),
+                    operation: InstallOperation::Uninstall,
+                    status: ProgressStatus::InProgress,
+                    message: "Starting uninstallation...".to_string(),
+                    command: uninstall_command.clone(),
+                    timestamp: Instant::now(),
+                });
+            }
+
+            match tool_manager.uninstall_tool(&tool_id).await {
+                Ok(_) => {
+                    // 卸载后重新检查状态
+                    let new_status = tool_manager.check_tool_status(&tool_id).await;
+                    
+                    // 更新工具缓存状态
+                    if let Ok(status) = &new_status {
+                        if let Ok(mut tools) = tools_cache.lock() {
+                            for tool in tools.iter_mut() {
+                                if tool.config.id == tool_id {
+                                    tool.status = status.clone();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // 使用我们已经检查的状态更新缓存
+                    if let Ok(status) = &new_status {
+                        let cache_manager_clone = Arc::clone(&cache_manager);
+                        let status_clone = status.clone();
+                        let tool_id_for_cache = tool_id.clone();
+                        
+                        std::thread::spawn(move || {
+                            let rt = tokio::runtime::Runtime::new().unwrap();
+                            rt.block_on(async {
+                                if let Ok(mut cache) = cache_manager_clone.lock() {
+                                    cache.set_tool_status(&tool_id_for_cache, status_clone);
+                                    let _ = cache.save().await;
+                                }
+                            });
+                        });
+                    }
+
+                    // 发送完成进度
+                    if let Some(sender) = &sender {
+                        let _ = sender.send(InstallProgress {
+                            tool_id: tool_id.clone(),
+                            tool_name: tool_id.clone(),
+                            operation: InstallOperation::Uninstall,
+                            status: ProgressStatus::Completed,
+                            message: "Uninstallation completed successfully".to_string(),
+                            command: uninstall_command.clone(),
+                            timestamp: Instant::now(),
+                        });
+                    }
+
+                    if let Some(context) = &ctx {
+                        context.request_repaint();
+                    }
+                }
+                Err(e) => {
+                    // 发送失败进度，包含详细错误信息
+                    if let Some(sender) = &sender {
+                        let _ = sender.send(InstallProgress {
+                            tool_id: tool_id.clone(),
+                            tool_name: tool_id.clone(),
+                            operation: InstallOperation::Uninstall,
+                            status: ProgressStatus::Failed,
+                            message: format!("Uninstallation failed: {}", e),
+                            command: uninstall_command.clone(),
+                            timestamp: Instant::now(),
+                        });
+                    }
+
+                    tracing::error!("Uninstallation failed for {}: {}", tool_id, e);
+                }
             }
         });
+
+        if let Ok(mut tasks) = self.background_tasks.lock() {
+            tasks.push(handle);
+        }
+    }
+
+    fn get_all_logs_as_text(&self) -> String {
+        let mut combined_entries = Vec::new();
+
+        // 添加状态检查进度条目
+        for progress in &self.app_state.status_progress {
+            let (icon, _color_name) = match &progress.status {
+                ProgressStatus::Pending => ("⏳", "GRAY"),
+                ProgressStatus::InProgress => ("🔄", "BLUE"), 
+                ProgressStatus::Completed => ("✅", "GREEN"),
+                ProgressStatus::Failed => ("❌", "RED"),
+            };
+            
+            let entry = format!("[STATUS] {} {} - {}", icon, progress.tool_name, progress.message);
+            combined_entries.push((progress.timestamp, entry));
+        }
+
+        // 添加安装进度条目
+        for progress in &self.app_state.install_progress {
+            let (icon, _color_name) = match &progress.status {
+                ProgressStatus::Pending => ("⏳", "GRAY"),
+                ProgressStatus::InProgress => ("🔄", "BLUE"), 
+                ProgressStatus::Completed => ("✅", "GREEN"),
+                ProgressStatus::Failed => ("❌", "RED"),
+            };
+            
+            let operation = match &progress.operation {
+                InstallOperation::Install => "INSTALL",
+                InstallOperation::Uninstall => "UNINSTALL",
+                InstallOperation::Update => "UPDATE",
+            };
+            
+            let mut entry = format!("[{}] {} {} - {}", operation, icon, progress.tool_name, progress.message);
+            
+            // 添加命令信息（如果可用）
+            if let Some(command) = &progress.command {
+                entry.push_str(&format!("\n   Command: {}", command));
+            }
+            
+            combined_entries.push((progress.timestamp, entry));
+        }
+
+        // 按时间戳排序（最新的在最后）
+        combined_entries.sort_by_key(|&(timestamp, _)| timestamp);
+
+        let mut result = String::new();
+        for (timestamp, entry) in combined_entries {
+            // 格式化时间戳为事件发生的实际时间 (HH:MM:SS)
+            let time_str = {
+                use chrono::{DateTime, Local};
+                
+                // 计算事件发生的实际时间
+                let now = std::time::SystemTime::now();
+                let event_time = now - timestamp.elapsed();
+                
+                // 转换为本地日期时间
+                let datetime: DateTime<Local> = event_time.into();
+                datetime.format("%H:%M:%S").to_string()
+            };
+            
+            result.push_str(&format!("[{}] {}\n", time_str, entry));
+        }
+
+        if result.is_empty() {
+            "No operations logged yet.".to_string()
+        } else {
+            result
+        }
     }
 
     fn render_about(&mut self, ui: &mut egui::Ui) {
@@ -2008,8 +2477,8 @@ impl eframe::App for CLIvergeApp {
                     self.refresh_tools_with_progress();
                 }
                 
-                if ui.button("📊 Status Log").clicked() {
-                    self.app_state.log_window_open = !self.app_state.log_window_open;
+                if ui.button("📊 Operations Log").clicked() {
+                    self.app_state.bottom_log_panel_open = !self.app_state.bottom_log_panel_open;
                 }
                 
                 if ui.button("⚙ Settings").clicked() {
@@ -2022,18 +2491,6 @@ impl eframe::App for CLIvergeApp {
             });
         });
         
-        // Progress log window
-        let mut log_window_open = self.app_state.log_window_open;
-        if log_window_open {
-            egui::Window::new("📊 Status Check Progress")
-                .open(&mut log_window_open)
-                .resizable(true)
-                .default_size([400.0, 300.0])
-                .show(ctx, |ui| {
-                    self.render_progress_log(ui);
-                });
-            self.app_state.log_window_open = log_window_open;
-        }
 
         // Show notifications
         for (i, notification) in self.app_state.notifications.iter().enumerate() {
@@ -2141,6 +2598,17 @@ impl eframe::App for CLIvergeApp {
                 self.app_state.show_tool_editor = show_tool_editor;
             }
         }
+
+        // 底部面板用于综合日志记录
+        egui::TopBottomPanel::bottom("bottom_log_panel")
+            .resizable(true)
+            .default_height(if self.app_state.bottom_log_panel_open { 250.0 } else { 50.0 })
+            .min_height(50.0)
+            .max_height(600.0)
+            .height_range(50.0..=600.0) // 关键：允许用户拖动调整
+            .show(ctx, |ui| {
+                self.render_comprehensive_log(ui);
+            });
 
         // Main content
         match self.app_state.current_view {

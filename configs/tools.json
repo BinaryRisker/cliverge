@@ -1,6 +1,6 @@
 {
-  "version": "1.0",
-  "last_updated": "2025-08-31T20:00:00Z",
+  "version": "2.0",
+  "last_updated": "2025-01-06T10:00:00Z",
   "tools": [
     {
       "id": "claude-code",
@@ -17,13 +17,47 @@
           "package_name": "@anthropic-ai/claude-cli"
         },
         "macos": {
-          "method": "brew",
-          "command": ["brew", "install", "claude-cli"],
-          "package_name": "claude-cli"
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@anthropic-ai/claude-cli"],
+          "package_name": "@anthropic-ai/claude-cli"
         },
         "linux": {
           "method": "npm",
           "command": ["npm", "install", "-g", "@anthropic-ai/claude-cli"],
+          "package_name": "@anthropic-ai/claude-cli"
+        }
+      },
+      "uninstall": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@anthropic-ai/claude-cli"],
+          "package_name": "@anthropic-ai/claude-cli"
+        },
+        "macos": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@anthropic-ai/claude-cli"],
+          "package_name": "@anthropic-ai/claude-cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@anthropic-ai/claude-cli"],
+          "package_name": "@anthropic-ai/claude-cli"
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@anthropic-ai/claude-cli"],
+          "package_name": "@anthropic-ai/claude-cli"
+        },
+        "macos": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@anthropic-ai/claude-cli"],
+          "package_name": "@anthropic-ai/claude-cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@anthropic-ai/claude-cli"],
           "package_name": "@anthropic-ai/claude-cli"
         }
       },
@@ -53,18 +87,52 @@
       "install": {
         "windows": {
           "method": "npm",
-          "command": ["npm", "install", "-g", "@google-ai/gemini-cli"],
-          "package_name": "@google-ai/gemini-cli"
+          "command": ["npm", "install", "-g", "@google/gemini-cli"],
+          "package_name": "@google/gemini-cli"
         },
         "macos": {
           "method": "npm",
-          "command": ["npm", "install", "-g", "@google-ai/gemini-cli"],
-          "package_name": "@google-ai/gemini-cli"
+          "command": ["npm", "install", "-g", "@google/gemini-cli"],
+          "package_name": "@google/gemini-cli"
         },
         "linux": {
           "method": "npm",
-          "command": ["npm", "install", "-g", "@google-ai/gemini-cli"],
-          "package_name": "@google-ai/gemini-cli"
+          "command": ["npm", "install", "-g", "@google/gemini-cli"],
+          "package_name": "@google/gemini-cli"
+        }
+      },
+      "uninstall": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@google/gemini-cli"],
+          "package_name": "@google/gemini-cli"
+        },
+        "macos": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@google/gemini-cli"],
+          "package_name": "@google/gemini-cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@google/gemini-cli"],
+          "package_name": "@google/gemini-cli"
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@google/gemini-cli"],
+          "package_name": "@google/gemini-cli"
+        },
+        "macos": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@google/gemini-cli"],
+          "package_name": "@google/gemini-cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@google/gemini-cli"],
+          "package_name": "@google/gemini-cli"
         }
       },
       "config_schema": {
@@ -86,7 +154,7 @@
       "id": "qwen-code-cli",
       "name": "Qwen Code CLI",
       "description": "Alibaba Qwen Code Assistant - Chinese-friendly AI programming tool",
-      "website": "https://qwenlm.github.io/blog/qwen3-coder",
+      "website": "https://www.readme-i18n.com/en/QwenLM/qwen-code?lang=en",
       "command": "qwen",
       "version_check": ["--version"],
       "update_check": ["npm", "outdated", "-g", "@qwen-code/qwen-code"],
@@ -107,6 +175,40 @@
           "package_name": "@qwen-code/qwen-code"
         }
       },
+      "uninstall": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@qwen-code/qwen-code"],
+          "package_name": "@qwen-code/qwen-code"
+        },
+        "macos": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@qwen-code/qwen-code"],
+          "package_name": "@qwen-code/qwen-code"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@qwen-code/qwen-code"],
+          "package_name": "@qwen-code/qwen-code"
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@qwen-code/qwen-code"],
+          "package_name": "@qwen-code/qwen-code"
+        },
+        "macos": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@qwen-code/qwen-code"],
+          "package_name": "@qwen-code/qwen-code"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@qwen-code/qwen-code"],
+          "package_name": "@qwen-code/qwen-code"
+        }
+      },
       "config_schema": {
         "api_key": {
           "field_type": "string",
@@ -123,90 +225,17 @@
       }
     },
     {
-      "id": "openai-cli",
-      "name": "OpenAI CLI",
-      "description": "OpenAI official command line tool",
-      "website": "https://platform.openai.com/",
-      "command": "openai",
-      "version_check": ["--version"],
-      "update_check": ["openai", "update", "--check"],
-      "install": {
-        "windows": {
-          "method": "npm",
-          "command": ["npm", "install", "-g", "openai-cli"],
-          "package_name": "openai-cli"
-        },
-        "macos": {
-          "method": "brew",
-          "command": ["brew", "install", "openai-cli"],
-          "package_name": "openai-cli"
-        },
-        "linux": {
-          "method": "pip",
-          "command": ["pip", "install", "openai-cli"],
-          "package_name": "openai-cli"
-        }
-      },
-      "config_schema": {
-        "api_key": {
-          "field_type": "string",
-          "secret": true,
-          "required": true,
-          "description": "OpenAI API Key"
-        },
-        "organization": {
-          "field_type": "string",
-          "required": false,
-          "description": "OpenAI Organization ID"
-        }
-      }
-    },
-    {
-      "id": "github-copilot-cli",
-      "name": "GitHub Copilot CLI",
-      "description": "GitHub Copilot command line interface",
-      "website": "https://github.com/features/copilot",
-      "command": "gh",
-      "version_check": ["copilot", "--version"],
-      "update_check": ["extension", "upgrade", "copilot"],
-      "install": {
-        "windows": {
-          "method": "npm",
-          "command": ["gh", "extension", "install", "github/gh-copilot"],
-          "package_name": "github/gh-copilot"
-        },
-        "macos": {
-          "method": "brew",
-          "command": ["gh", "extension", "install", "github/gh-copilot"],
-          "package_name": "github/gh-copilot"
-        },
-        "linux": {
-          "method": "script",
-          "command": ["gh", "extension", "install", "github/gh-copilot"],
-          "package_name": "github/gh-copilot"
-        }
-      },
-      "config_schema": {
-        "github_token": {
-          "field_type": "string",
-          "secret": true,
-          "required": true,
-          "description": "GitHub Personal Access Token"
-        }
-      }
-    },
-    {
       "id": "cursor-cli",
       "name": "Cursor CLI",
       "description": "Cursor editor command line tools",
-      "website": "https://cursor.sh/",
+      "website": "https://cursor.com/en/cli",
       "command": "cursor",
       "version_check": ["--version"],
       "update_check": ["--check-for-update"],
       "install": {
         "windows": {
-          "method": "script",
-          "url": "https://cursor.sh/install.ps1"
+          "method": "winget",
+          "package_name": "Cursor.Cursor"
         },
         "macos": {
           "method": "brew",
@@ -215,7 +244,37 @@
         },
         "linux": {
           "method": "script",
-          "url": "https://cursor.sh/install.sh"
+          "url": "https://cursor.com/install"
+        }
+      },
+      "uninstall": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Cursor.Cursor"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "uninstall", "--cask", "cursor"],
+          "package_name": "cursor"
+        },
+        "linux": {
+          "method": "script",
+          "uninstall_command": ["sudo", "rm", "-rf", "/usr/local/bin/cursor"]
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Cursor.Cursor"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "upgrade", "--cask", "cursor"],
+          "package_name": "cursor"
+        },
+        "linux": {
+          "method": "script",
+          "url": "https://cursor.com/install"
         }
       },
       "config_schema": {
@@ -228,133 +287,62 @@
       }
     },
     {
-      "id": "opencode",
-      "name": "OpenCode CLI",
-      "description": "Open source code analysis and generation tool",
-      "website": "https://github.com/opencode-ai/opencode",
-      "command": "opencode",
-      "version_check": ["--version"],
-      "update_check": ["opencode", "update", "--check"],
-      "install": {
-        "windows": {
-          "method": "npm",
-          "command": ["npm", "install", "-g", "@opencode/cli"],
-          "package_name": "@opencode/cli"
-        },
-        "macos": {
-          "method": "brew",
-          "command": ["brew", "install", "opencode"],
-          "package_name": "opencode"
-        },
-        "linux": {
-          "method": "npm",
-          "command": ["npm", "install", "-g", "@opencode/cli"],
-          "package_name": "@opencode/cli"
-        }
-      },
-      "config_schema": {
-        "api_key": {
-          "field_type": "string",
-          "secret": true,
-          "required": false,
-          "description": "OpenCode API Key (optional)"
-        }
-      }
-    },
-    {
-      "id": "universal-ai-cli",
-      "name": "Universal AI CLI",
-      "description": "Universal interface for multiple AI providers",
-      "website": "https://github.com/daxiondi/universal-ai-cli",
-      "command": "uai",
-      "version_check": ["--version"],
-      "update_check": ["update", "--check"],
-      "install": {
-        "windows": {
-          "method": "npm",
-          "command": ["npm", "install", "-g", "universal-ai-cli"],
-          "package_name": "universal-ai-cli"
-        },
-        "macos": {
-          "method": "brew",
-          "command": ["brew", "install", "universal-ai-cli"],
-          "package_name": "universal-ai-cli"
-        },
-        "linux": {
-          "method": "pip",
-          "command": ["pip", "install", "universal-ai-cli"],
-          "package_name": "universal-ai-cli"
-        }
-      },
-      "config_schema": {
-        "default_provider": {
-          "field_type": "enum",
-          "values": ["openai", "anthropic", "google", "azure"],
-          "default": "openai",
-          "description": "Default AI provider"
-        },
-        "providers": {
-          "field_type": "object",
-          "required": true,
-          "description": "Provider configurations"
-        }
-      }
-    },
-    {
-      "id": "crush",
-      "name": "Crush CLI",
-      "description": "File compression and optimization tool",
-      "website": "https://github.com/charmbracelet/crush",
-      "command": "crush",
-      "version_check": ["--version"],
-      "update_check": ["--check-update"],
-      "install": {
-        "windows": {
-          "method": "winget",
-          "command": ["winget", "install", "crush"],
-          "package_name": "crush"
-        },
-        "macos": {
-          "method": "brew",
-          "command": ["brew", "install", "crush"],
-          "package_name": "crush"
-        },
-        "linux": {
-          "method": "script",
-          "url": "https://github.com/crush/cli/releases/latest/download/install.sh"
-        }
-      },
-      "config_schema": {
-        "compression_level": {
-          "field_type": "number",
-          "default": 6,
-          "description": "Default compression level (1-9)"
-        }
-      }
-    },
-    {
       "id": "iflow-cli",
       "name": "iFlow CLI",
-      "description": "Intelligent workflow automation tool",
-      "website": "https://github.com/iflow-ai/iflow-cli",
+      "description": "iFlow cli is a comprehensive command-line intelligence that embeds in your terminal, analyzes your repositories, does coding tasks, interprets your needs across contexts, and boosts efficiency by performing tasks from simple file operations to complex workflow automation.",
+      "website": "https://cli.iflow.cn",
       "command": "iflow",
       "version_check": ["--version"],
       "update_check": ["update", "--check"],
       "install": {
         "windows": {
           "method": "npm",
-          "command": ["npm", "install", "-g", "@iflow/cli"],
-          "package_name": "@iflow/cli"
+          "command": ["npm", "install", "-g", "@iflow-ai/iflow-cli"],
+          "package_name": "@iflow-ai/iflow-cli"
         },
         "macos": {
-          "method": "brew",
-          "command": ["brew", "install", "iflow-cli"],
-          "package_name": "iflow-cli"
+          "method": "npm",
+          "command": ["npm", "install", "-g", "@iflow-ai/iflow-cli"],
+          "package_name": "@iflow-ai/iflow-cli"
         },
         "linux": {
           "method": "npm",
-          "command": ["npm", "install", "-g", "@iflow/cli"],
-          "package_name": "@iflow/cli"
+          "command": ["npm", "install", "-g", "@iflow-ai/iflow-cli"],
+          "package_name": "@iflow-ai/iflow-cli"
+        }
+      },
+      "uninstall": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@iflow-ai/iflow-cli"],
+          "package_name": "@iflow-ai/iflow-cli"
+        },
+        "macos": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@iflow-ai/iflow-cli"],
+          "package_name": "@iflow-ai/iflow-cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "uninstall", "-g", "@iflow-ai/iflow-cli"],
+          "package_name": "@iflow-ai/iflow-cli"
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@iflow-ai/iflow-cli"],
+          "package_name": "@iflow-ai/iflow-cli"
+        },
+        "macos": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@iflow-ai/iflow-cli"],
+          "package_name": "@iflow-ai/iflow-cli"
+        },
+        "linux": {
+          "method": "npm",
+          "command": ["npm", "update", "-g", "@iflow-ai/iflow-cli"],
+          "package_name": "@iflow-ai/iflow-cli"
         }
       },
       "config_schema": {
@@ -371,68 +359,59 @@
       }
     },
     {
-      "id": "grok-cli",
-      "name": "Grok CLI",
-      "description": "Grok AI assistant command line interface",
-      "website": "https://github.com/superagent-ai/grok-cli",
-      "command": "grok",
-      "version_check": ["--version"],
-      "update_check": ["update", "--check"],
-      "install": {
-        "windows": {
-          "method": "npm",
-          "command": ["npm", "install", "-g", "@x-ai/grok-cli"],
-          "package_name": "@x-ai/grok-cli"
-        },
-        "macos": {
-          "method": "brew",
-          "command": ["brew", "install", "grok-cli"],
-          "package_name": "grok-cli"
-        },
-        "linux": {
-          "method": "npm",
-          "command": ["npm", "install", "-g", "@x-ai/grok-cli"],
-          "package_name": "@x-ai/grok-cli"
-        }
-      },
-      "config_schema": {
-        "api_key": {
-          "field_type": "string",
-          "secret": true,
-          "required": true,
-          "description": "Grok API Key"
-        },
-        "model": {
-          "field_type": "enum",
-          "values": ["grok-1", "grok-1.5", "grok-2"],
-          "default": "grok-1.5",
-          "description": "Grok model version"
-        }
-      }
-    },
-    {
       "id": "cursh",
       "name": "Cursh CLI",
-      "description": "Cursor shell integration and productivity tool",
-      "website": "https://github.com/cursh/cli",
+      "description": "The glamourous AI coding agent for your favourite terminal",
+      "website": "https://github.com/charmbracelet/crush",
       "command": "cursh",
       "version_check": ["--version"],
       "update_check": ["--check-update"],
       "install": {
         "windows": {
-          "method": "npm",
-          "command": ["npm", "install", "-g", "cursh-cli"],
-          "package_name": "cursh-cli"
+          "method": "winget",
+          "package_name": "charmbracelet.crush"
         },
         "macos": {
           "method": "brew",
-          "command": ["brew", "install", "cursh"],
-          "package_name": "cursh"
+          "command": ["brew", "install", "charmbracelet/tap/crush"],
+          "package_name": "crush"
         },
         "linux": {
-          "method": "cargo",
-          "command": ["cargo", "install", "cursh"],
-          "package_name": "cursh"
+          "method": "snap",
+          "command": ["sudo", "snap", "install", "crush"],
+          "package_name": "crush"
+        }
+      },
+      "uninstall": {
+        "windows": {
+          "method": "winget",
+          "package_name": "charmbracelet.crush"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "uninstall", "crush"],
+          "package_name": "crush"
+        },
+        "linux": {
+          "method": "snap",
+          "command": ["sudo", "snap", "remove", "crush"],
+          "package_name": "crush"
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "winget",
+          "package_name": "charmbracelet.crush"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "upgrade", "crush"],
+          "package_name": "crush"
+        },
+        "linux": {
+          "method": "snap",
+          "command": ["sudo", "snap", "refresh", "crush"],
+          "package_name": "crush"
         }
       },
       "config_schema": {
@@ -446,6 +425,331 @@
           "field_type": "boolean",
           "default": true,
           "description": "Enable shell integration"
+        }
+      }
+    },
+    {
+      "id": "git",
+      "name": "Git",
+      "description": "Distributed version control system",
+      "website": "https://git-scm.com/",
+      "command": "git",
+      "version_check": ["--version"],
+      "update_check": ["--version"],
+      "install": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Git.Git"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "git"],
+          "package_name": "git"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "install", "-y", "git"],
+          "package_name": "git"
+        }
+      },
+      "uninstall": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Git.Git"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "uninstall", "git"],
+          "package_name": "git"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "remove", "-y", "git"],
+          "package_name": "git"
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Git.Git"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "upgrade", "git"],
+          "package_name": "git"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "update", "&&", "sudo", "apt", "upgrade", "-y", "git"],
+          "package_name": "git"
+        }
+      },
+      "config_schema": {
+        "user_name": {
+          "field_type": "string",
+          "required": false,
+          "description": "Git user name"
+        },
+        "user_email": {
+          "field_type": "string",
+          "required": false,
+          "description": "Git user email"
+        }
+      }
+    },
+    {
+      "id": "node",
+      "name": "Node.js",
+      "description": "JavaScript runtime built on Chrome's V8 JavaScript engine",
+      "website": "https://nodejs.org/",
+      "command": "node",
+      "version_check": ["--version"],
+      "update_check": ["--version"],
+      "install": {
+        "windows": {
+          "method": "winget",
+          "package_name": "OpenJS.NodeJS"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "node"],
+          "package_name": "node"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "install", "-y", "nodejs", "npm"],
+          "package_name": "nodejs"
+        }
+      },
+      "uninstall": {
+        "windows": {
+          "method": "winget",
+          "package_name": "OpenJS.NodeJS"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "uninstall", "node"],
+          "package_name": "node"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "remove", "-y", "nodejs", "npm"],
+          "package_name": "nodejs"
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "winget",
+          "package_name": "OpenJS.NodeJS"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "upgrade", "node"],
+          "package_name": "node"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "update", "&&", "sudo", "apt", "upgrade", "-y", "nodejs", "npm"],
+          "package_name": "nodejs"
+        }
+      },
+      "config_schema": {
+        "registry": {
+          "field_type": "string",
+          "required": false,
+          "description": "NPM registry URL"
+        }
+      }
+    },
+    {
+      "id": "python",
+      "name": "Python",
+      "description": "Python programming language",
+      "website": "https://python.org/",
+      "command": "python",
+      "version_check": ["--version"],
+      "update_check": ["--version"],
+      "install": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Python.Python.3.12"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "python"],
+          "package_name": "python"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "install", "-y", "python3", "python3-pip"],
+          "package_name": "python3"
+        }
+      },
+      "uninstall": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Python.Python.3.12"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "uninstall", "python"],
+          "package_name": "python"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "remove", "-y", "python3", "python3-pip"],
+          "package_name": "python3"
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Python.Python.3.12"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "upgrade", "python"],
+          "package_name": "python"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "update", "&&", "sudo", "apt", "upgrade", "-y", "python3", "python3-pip"],
+          "package_name": "python3"
+        }
+      },
+      "config_schema": {
+        "pip_index": {
+          "field_type": "string",
+          "required": false,
+          "description": "PyPI index URL"
+        }
+      }
+    },
+    {
+      "id": "docker",
+      "name": "Docker",
+      "description": "Platform for developing, shipping, and running applications in containers",
+      "website": "https://docker.com/",
+      "command": "docker",
+      "version_check": ["--version"],
+      "update_check": ["version"],
+      "install": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Docker.DockerDesktop"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "--cask", "docker"],
+          "package_name": "docker"
+        },
+        "linux": {
+          "method": "script",
+          "url": "https://get.docker.com"
+        }
+      },
+      "uninstall": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Docker.DockerDesktop"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "uninstall", "--cask", "docker"],
+          "package_name": "docker"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "remove", "-y", "docker-ce", "docker-ce-cli", "containerd.io"],
+          "package_name": "docker-ce"
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "winget",
+          "package_name": "Docker.DockerDesktop"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "upgrade", "--cask", "docker"],
+          "package_name": "docker"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "update", "&&", "sudo", "apt", "upgrade", "-y", "docker-ce", "docker-ce-cli", "containerd.io"],
+          "package_name": "docker-ce"
+        }
+      },
+      "config_schema": {
+        "registry": {
+          "field_type": "string",
+          "required": false,
+          "description": "Docker registry URL"
+        }
+      }
+    },
+    {
+      "id": "gh",
+      "name": "GitHub CLI",
+      "description": "GitHub's official command line tool",
+      "website": "https://cli.github.com/",
+      "command": "gh",
+      "version_check": ["--version"],
+      "update_check": ["version"],
+      "install": {
+        "windows": {
+          "method": "winget",
+          "package_name": "GitHub.cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "install", "gh"],
+          "package_name": "gh"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "install", "-y", "gh"],
+          "package_name": "gh"
+        }
+      },
+      "uninstall": {
+        "windows": {
+          "method": "winget",
+          "package_name": "GitHub.cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "uninstall", "gh"],
+          "package_name": "gh"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "remove", "-y", "gh"],
+          "package_name": "gh"
+        }
+      },
+      "update": {
+        "windows": {
+          "method": "winget",
+          "package_name": "GitHub.cli"
+        },
+        "macos": {
+          "method": "brew",
+          "command": ["brew", "upgrade", "gh"],
+          "package_name": "gh"
+        },
+        "linux": {
+          "method": "apt",
+          "command": ["sudo", "apt", "update", "&&", "sudo", "apt", "upgrade", "-y", "gh"],
+          "package_name": "gh"
+        }
+      },
+      "config_schema": {
+        "token": {
+          "field_type": "string",
+          "secret": true,
+          "required": false,
+          "description": "GitHub Personal Access Token"
         }
       }
     }

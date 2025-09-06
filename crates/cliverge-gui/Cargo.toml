@@ -18,7 +18,7 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 # tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi"] }  # Simplified logging
 dirs = { workspace = true }
-chrono = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
 webbrowser = { version = "0.8", default-features = false }
 # image = { version = "0.24", default-features = false, features = ["png"] }  # Removed, not directly used
 

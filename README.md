@@ -41,11 +41,12 @@
 - ✅ **Cross-Platform Support** - Native support for Windows, macOS, and Linux
 - ✅ **Multi-Theme Support** - Light/Dark theme switching
 - ✅ **Real-time Notifications** - Operation feedback and status update notifications
+- ✅ **Unified Log System** - Resizable bottom panel with text selection and copy support
 - ✅ **Ultra-Lightweight** - Optimized to only 1.5MB (73.9% size reduction)
 
 ### 🚧 In Development
 
-- 🚧 **One-Click Install/Uninstall** - Smart platform detection with optimal installation methods
+- ✅ **One-Click Install/Uninstall** - Smart platform detection with optimal installation methods (Basic functionality completed)
 - 🚧 **Version Update Checker** - Automatic tool update checking
 - 🚧 **Tool Configuration Management** - Visual configuration of tool parameters
 - 🚧 **Integrated Terminal** - Built-in terminal emulator
@@ -72,6 +73,11 @@ Currently supports management of the following AI command-line tools:
 - **Runtime**: No runtime dependencies required
 - **Memory**: Minimum 2GB RAM
 - **Disk Space**: 2MB
+
+### Development Requirements
+
+- **Rust**: 1.82.0 or newer (MSRV)
+- **Cargo**: Latest stable
 
 ### Installation
 
@@ -168,9 +174,9 @@ cliverge/
 
 | Module | Completion | Notes |
 |--------|------------|-------|
-| **GUI Interface** | 85% | Main interface complete, some features pending |
-| **Core Engine** | 60% | Basic functionality implemented, advanced features in development |
-| **Tool Management** | 70% | Status detection complete, installation features in development |
+| **GUI Interface** | 90% | Main interface complete, log system optimized |
+| **Core Engine** | 70% | Basic functionality implemented, advanced features in development |
+| **Tool Management** | 85% | Status detection complete, install/uninstall functionality implemented |
 | **Caching System** | 90% | Complete caching mechanism implemented |
 | **Configuration Management** | 80% | Config read/write complete, UI editor in development |
 | **Version Checking** | 40% | Basic architecture complete, strategy implementation in progress |
@@ -186,10 +192,10 @@ cliverge/
 
 ### Short-term Goals (1-2 weeks)
 
-- [ ] Complete tool install/uninstall functionality
+- [x] Complete tool install/uninstall functionality ✅ **Completed**
+- [x] Optimize log system and user feedback ✅ **Completed**
 - [ ] Implement version update checking mechanism
 - [ ] Add tool configuration editor
-- [ ] Optimize error handling and user feedback
 
 ### Medium-term Goals (1 month)
 
