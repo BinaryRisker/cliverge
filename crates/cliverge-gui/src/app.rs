@@ -112,8 +112,11 @@ pub struct ToolFormState {
     pub description: String,
     pub website: String,
     pub command: String,
-    pub version_check_args: String,  // Space-separated args like "--version"
-    pub update_check_args: String,   // Space-separated args like "update --check"
+    
+    // Version check methods (per platform)
+    pub version_check_methods: std::collections::HashMap<String, String>, // 平台 -> 版本检查参数
+    // Update check methods (per platform)  
+    pub update_check_methods: std::collections::HashMap<String, String>,  // 平台 -> 更新检查参数
     
     // Install methods (per platform)
     pub install_methods: std::collections::HashMap<String, InstallMethodForm>,
@@ -137,12 +140,16 @@ pub struct InstallMethodForm {
 
 impl Default for ToolFormState {
     fn default() -> Self {
+        let mut version_check_methods = std::collections::HashMap::new();
+        let mut update_check_methods = std::collections::HashMap::new();
         let mut install_methods = std::collections::HashMap::new();
         let mut uninstall_methods = std::collections::HashMap::new();
         let mut update_methods = std::collections::HashMap::new();
         
         // Initialize with empty forms for all platforms
         for platform in ["windows", "macos", "linux"] {
+            version_check_methods.insert(platform.to_string(), "--version".to_string());
+            update_check_methods.insert(platform.to_string(), String::new());
             install_methods.insert(platform.to_string(), InstallMethodForm::default());
             uninstall_methods.insert(platform.to_string(), InstallMethodForm::default());
             update_methods.insert(platform.to_string(), InstallMethodForm::default());
@@ -154,8 +161,8 @@ impl Default for ToolFormState {
             description: String::new(),
             website: String::new(),
             command: String::new(),
-            version_check_args: "--version".to_string(),
-            update_check_args: String::new(),
+            version_check_methods,
+            update_check_methods,
             install_methods,
             uninstall_methods,
             update_methods,
@@ -1958,14 +1965,21 @@ impl CLIvergeApp {
         self.app_state.tool_form_state.website = tool_config.website.clone();
         self.app_state.tool_form_state.command = tool_config.command.clone();
         
-        // Convert version check args from Vec<String> to space-separated string
-        self.app_state.tool_form_state.version_check_args = tool_config.version_check.join(" ");
+        // Convert version check args from HashMap<String, Vec<String>> to per-platform strings
+        for (platform, args) in &tool_config.version_check {
+            if let Some(form_args) = self.app_state.tool_form_state.version_check_methods.get_mut(platform) {
+                *form_args = args.join(" ");
+            }
+        }
         
         // Convert update check args (if present)
-        self.app_state.tool_form_state.update_check_args = tool_config.update_check
-            .as_ref()
-            .map(|args| args.join(" "))
-            .unwrap_or_default();
+        if let Some(update_check_configs) = &tool_config.update_check {
+            for (platform, args) in update_check_configs {
+                if let Some(form_args) = self.app_state.tool_form_state.update_check_methods.get_mut(platform) {
+                    *form_args = args.join(" ");
+                }
+            }
+        }
         
         // Populate install methods
         for (platform, install_method) in &tool_config.install {
@@ -2009,8 +2023,16 @@ impl CLIvergeApp {
             form.errors.push("Website must be a valid HTTP/HTTPS URL".to_string());
         }
         
-        if form.version_check_args.trim().is_empty() {
-            form.errors.push("Version check arguments are required".to_string());
+        // Validate version check methods for all platforms
+        let mut has_version_check = false;
+        for (_platform, args) in &form.version_check_methods {
+            if !args.trim().is_empty() {
+                has_version_check = true;
+                break;
+            }
+        }
+        if !has_version_check {
+            form.errors.push("At least one platform must have version check arguments".to_string());
         }
         
         // Check for duplicate names (only for new tools)
@@ -2171,17 +2193,26 @@ impl CLIvergeApp {
             description: form.description.clone(),
             website: form.website.clone(),
             command: form.command.clone(),
-            version_check: form.version_check_args
-                .split_whitespace()
-                .map(|s| s.to_string())
+            version_check: form.version_check_methods.iter()
+                .filter_map(|(platform, args)| {
+                    if !args.trim().is_empty() {
+                        Some((platform.clone(), args.split_whitespace().map(|s| s.to_string()).collect()))
+                    } else {
+                        None
+                    }
+                })
                 .collect(),
-            update_check: if form.update_check_args.trim().is_empty() {
-                None
-            } else {
-                Some(form.update_check_args
-                    .split_whitespace()
-                    .map(|s| s.to_string())
-                    .collect())
+            update_check: {
+                let update_configs: std::collections::HashMap<String, Vec<String>> = form.update_check_methods.iter()
+                    .filter_map(|(platform, args)| {
+                        if !args.trim().is_empty() {
+                            Some((platform.clone(), args.split_whitespace().map(|s| s.to_string()).collect()))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                if update_configs.is_empty() { None } else { Some(update_configs) }
             },
             install: form.install_methods.iter()
                 .filter_map(|(platform, method)| {
@@ -2364,7 +2395,9 @@ impl CLIvergeApp {
                             ui.text_edit_singleline(&mut self.app_state.tool_form_state.command);
                             if ui.button("🧪 Test").clicked() {
                                 let command = self.app_state.tool_form_state.command.clone();
-                                let args = self.app_state.tool_form_state.version_check_args.clone();
+                                // Use current platform's version check args for testing
+                                let platform = std::env::consts::OS;
+                                let args = self.app_state.tool_form_state.version_check_methods.get(platform).cloned().unwrap_or_default();
                                 self.test_tool_command(&command, &args);
                             }
                         });
@@ -2384,18 +2417,55 @@ impl CLIvergeApp {
             
             // Version Checking Section
             ui.collapsing("🔍 Version Checking", |ui| {
-                egui::Grid::new("version_grid")
-                    .num_columns(2)
-                    .spacing([10.0, 8.0])
-                    .show(ui, |ui| {
-                        ui.label("Version Check Args *:");
-                        ui.text_edit_singleline(&mut self.app_state.tool_form_state.version_check_args);
-                        ui.end_row();
+                ui.label("Configure version and update check commands for different platforms:");
+                ui.add_space(5.0);
+                
+                for platform in ["windows", "macos", "linux"] {
+                    ui.group(|ui| {
+                        ui.horizontal(|ui| {
+                            let platform_icon = match platform {
+                                "windows" => "🪟",
+                                "macos" => "🍎", 
+                                "linux" => "🐧",
+                                _ => "💻",
+                            };
+                            ui.label(format!("{} {}", platform_icon, platform.to_uppercase()));
+                        });
                         
-                        ui.label("Update Check Args:");
-                        ui.text_edit_singleline(&mut self.app_state.tool_form_state.update_check_args);
-                        ui.end_row();
+                        egui::Grid::new(format!("{}_version_grid", platform))
+                            .num_columns(2)
+                            .spacing([10.0, 4.0])
+                            .show(ui, |ui| {
+                                ui.label("Version Check Args *:");
+                                let mut test_clicked = false;
+                                let mut command_to_test = String::new();
+                                let mut args_to_test = String::new();
+                                
+                                if let Some(version_args) = self.app_state.tool_form_state.version_check_methods.get_mut(platform) {
+                                    ui.horizontal(|ui| {
+                                        ui.text_edit_singleline(version_args);
+                                        if ui.button("🧪 Test").clicked() {
+                                            test_clicked = true;
+                                            command_to_test = self.app_state.tool_form_state.command.clone();
+                                            args_to_test = version_args.clone();
+                                        }
+                                    });
+                                }
+                                
+                                if test_clicked {
+                                    self.test_tool_command(&command_to_test, &args_to_test);
+                                }
+                                ui.end_row();
+                                
+                                ui.label("Update Check Args:");
+                                if let Some(update_args) = self.app_state.tool_form_state.update_check_methods.get_mut(platform) {
+                                    ui.text_edit_singleline(update_args);
+                                }
+                                ui.end_row();
+                            });
                     });
+                    ui.add_space(8.0);
+                }
                 ui.small("Tip: Use space-separated arguments like '--version' or 'update --check'");
             });
             

@@ -46,8 +46,10 @@ pub struct ToolConfig {
     pub description: String,
     pub website: String,
     pub command: String,
-    pub version_check: Vec<String>,
-    pub update_check: Option<Vec<String>>,
+    #[serde(deserialize_with = "deserialize_version_check")]
+    pub version_check: HashMap<String, Vec<String>>, // 改为多平台支持
+    #[serde(deserialize_with = "deserialize_update_check", default)]
+    pub update_check: Option<HashMap<String, Vec<String>>>, // 改为多平台支持
     pub install: HashMap<String, InstallMethod>,
     pub uninstall: Option<HashMap<String, InstallMethod>>, // 新增卸载配置
     pub update: Option<HashMap<String, InstallMethod>>,     // 新增更新配置
@@ -246,5 +248,204 @@ impl ConfigManager {
             }
         }
         Err(ConfigError::NotFound("Default tools config not found".to_string()))
+    }
+}
+
+// 自定义反序列化函数，支持向后兼容
+fn deserialize_version_check<'de, D>(deserializer: D) -> Result<HashMap<String, Vec<String>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::{self, Visitor};
+    use std::fmt;
+
+    struct VersionCheckVisitor;
+
+    impl<'de> Visitor<'de> for VersionCheckVisitor {
+        type Value = HashMap<String, Vec<String>>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a Vec<String> or HashMap<String, Vec<String>>")
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: de::SeqAccess<'de>,
+        {
+            // 旧格式：Vec<String>，转换为所有平台使用相同配置
+            let mut vec = Vec::new();
+            while let Some(item) = seq.next_element::<String>()? {
+                vec.push(item);
+            }
+            
+            let mut map = HashMap::new();
+            map.insert("windows".to_string(), vec.clone());
+            map.insert("macos".to_string(), vec.clone());
+            map.insert("linux".to_string(), vec);
+            Ok(map)
+        }
+
+        fn visit_map<A>(self, mut map_access: A) -> Result<Self::Value, A::Error>
+        where
+            A: de::MapAccess<'de>,
+        {
+            // 新格式：HashMap<String, Vec<String>>
+            let mut map = HashMap::new();
+            while let Some((key, value)) = map_access.next_entry::<String, Vec<String>>()? {
+                map.insert(key, value);
+            }
+            Ok(map)
+        }
+    }
+
+    deserializer.deserialize_any(VersionCheckVisitor)
+}
+
+fn deserialize_update_check<'de, D>(deserializer: D) -> Result<Option<HashMap<String, Vec<String>>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::{self, Visitor};
+    use std::fmt;
+
+    struct UpdateCheckVisitor;
+
+    impl<'de> Visitor<'de> for UpdateCheckVisitor {
+        type Value = Option<HashMap<String, Vec<String>>>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("null, a Vec<String> or HashMap<String, Vec<String>>")
+        }
+
+        fn visit_none<E>(self) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(None)
+        }
+
+        fn visit_unit<E>(self) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(None)
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: de::SeqAccess<'de>,
+        {
+            // 旧格式：Vec<String>，转换为所有平台使用相同配置
+            let mut vec = Vec::new();
+            while let Some(item) = seq.next_element::<String>()? {
+                vec.push(item);
+            }
+            
+            if vec.is_empty() {
+                return Ok(None);
+            }
+            
+            let mut map = HashMap::new();
+            map.insert("windows".to_string(), vec.clone());
+            map.insert("macos".to_string(), vec.clone());
+            map.insert("linux".to_string(), vec);
+            Ok(Some(map))
+        }
+
+        fn visit_map<A>(self, mut map_access: A) -> Result<Self::Value, A::Error>
+        where
+            A: de::MapAccess<'de>,
+        {
+            // 新格式：HashMap<String, Vec<String>>
+            let mut map = HashMap::new();
+            while let Some((key, value)) = map_access.next_entry::<String, Vec<String>>()? {
+                map.insert(key, value);
+            }
+            Ok(Some(map))
+        }
+    }
+
+    deserializer.deserialize_any(UpdateCheckVisitor)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json;
+
+    #[test]
+    fn test_backward_compatibility_version_check() {
+        // 测试旧格式的version_check (Vec<String>)
+        let old_format = r#"{
+            "id": "test",
+            "name": "Test Tool",
+            "description": "Test",
+            "website": "https://test.com",
+            "command": "test",
+            "version_check": ["--version"],
+            "install": {}
+        }"#;
+
+        let config: ToolConfig = serde_json::from_str(old_format).expect("Should parse old format");
+        
+        // 验证转换后的格式
+        assert_eq!(config.version_check.len(), 3);
+        assert_eq!(config.version_check.get("windows"), Some(&vec!["--version".to_string()]));
+        assert_eq!(config.version_check.get("macos"), Some(&vec!["--version".to_string()]));
+        assert_eq!(config.version_check.get("linux"), Some(&vec!["--version".to_string()]));
+    }
+
+    #[test]
+    fn test_backward_compatibility_update_check() {
+        // 测试旧格式的update_check (Vec<String>)
+        let old_format = r#"{
+            "id": "test",
+            "name": "Test Tool", 
+            "description": "Test",
+            "website": "https://test.com",
+            "command": "test",
+            "version_check": ["--version"],
+            "update_check": ["update", "--check"],
+            "install": {}
+        }"#;
+
+        let config: ToolConfig = serde_json::from_str(old_format).expect("Should parse old format");
+        
+        // 验证转换后的格式
+        assert!(config.update_check.is_some());
+        let update_check = config.update_check.unwrap();
+        assert_eq!(update_check.len(), 3);
+        assert_eq!(update_check.get("windows"), Some(&vec!["update".to_string(), "--check".to_string()]));
+    }
+
+    #[test]
+    fn test_new_format_compatibility() {
+        // 测试新格式的配置
+        let new_format = r#"{
+            "id": "test",
+            "name": "Test Tool",
+            "description": "Test", 
+            "website": "https://test.com",
+            "command": "test",
+            "version_check": {
+                "windows": ["--version"],
+                "linux": ["-V"]
+            },
+            "update_check": {
+                "windows": ["update", "--check"],
+                "linux": ["upgrade"]
+            },
+            "install": {}
+        }"#;
+
+        let config: ToolConfig = serde_json::from_str(new_format).expect("Should parse new format");
+        
+        // 验证新格式保持不变
+        assert_eq!(config.version_check.get("windows"), Some(&vec!["--version".to_string()]));
+        assert_eq!(config.version_check.get("linux"), Some(&vec!["-V".to_string()]));
+        
+        let update_check = config.update_check.unwrap();
+        assert_eq!(update_check.get("windows"), Some(&vec!["update".to_string(), "--check".to_string()]));
+        assert_eq!(update_check.get("linux"), Some(&vec!["upgrade".to_string()]));
     }
 }

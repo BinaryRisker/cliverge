@@ -100,7 +100,11 @@ impl VersionChecker {
     pub async fn get_current_version(&self, tool_config: &ToolConfig) -> Result<String, ToolError> {
         debug!("Getting current version for: {}", tool_config.id);
 
-        let mut cmd = Self::create_hidden_command(&tool_config.command, &tool_config.version_check);
+        let platform = std::env::consts::OS;
+        let version_check_args = tool_config.version_check.get(platform)
+            .ok_or_else(|| ToolError::NotSupported(format!("Platform {} not supported for version check", platform)))?;
+
+        let mut cmd = Self::create_hidden_command(&tool_config.command, version_check_args);
         let output = cmd.output().await
             .map_err(|e| ToolError::ExecutionFailed(format!("Failed to execute version check: {}", e)))?;
 
@@ -120,13 +124,16 @@ impl VersionChecker {
         debug!("Auto-selecting version check method for: {}", tool_config.id);
 
         // Priority 1: Tool's own update check
-        if let Some(update_check) = &tool_config.update_check {
-            if !update_check.is_empty() {
-                if let Ok(result) = self.check_via_self_update(tool_config).await {
-                    debug!("Auto-check succeeded with self-update method");
-                    return Ok(result);
+        if let Some(update_check_configs) = &tool_config.update_check {
+            let platform = std::env::consts::OS;
+            if let Some(update_check) = update_check_configs.get(platform) {
+                if !update_check.is_empty() {
+                    if let Ok(result) = self.check_via_self_update(tool_config).await {
+                        debug!("Auto-check succeeded with self-update method");
+                        return Ok(result);
+                    }
+                    warn!("Self-update check failed for {}, trying package manager", tool_config.id);
                 }
-                warn!("Self-update check failed for {}, trying package manager", tool_config.id);
             }
         }
 
@@ -147,26 +154,31 @@ impl VersionChecker {
 
         let current = self.get_current_version(tool_config).await.ok();
 
-        let latest = if let Some(update_cmd) = &tool_config.update_check {
-            if !update_cmd.is_empty() {
-                let mut cmd = if cfg!(windows) {
-                    // On Windows, use hidden PowerShell execution
-                    Self::create_hidden_command(&update_cmd[0], &update_cmd[1..])
-                } else {
-                    let mut cmd = Command::new(&update_cmd[0]);
-                    cmd.args(&update_cmd[1..]);
-                    cmd
-                };
-                
-                let output = cmd.output()
-                    .await
-                    .map_err(|e| ToolError::ExecutionFailed(format!("Update check failed: {}", e)))?;
+        let latest = if let Some(update_check_configs) = &tool_config.update_check {
+            let platform = std::env::consts::OS;
+            if let Some(update_cmd) = update_check_configs.get(platform) {
+                if !update_cmd.is_empty() {
+                    let mut cmd = if cfg!(windows) {
+                        // On Windows, use hidden PowerShell execution
+                        Self::create_hidden_command(&update_cmd[0], &update_cmd[1..])
+                    } else {
+                        let mut cmd = Command::new(&update_cmd[0]);
+                        cmd.args(&update_cmd[1..]);
+                        cmd
+                    };
+                    
+                    let output = cmd.output()
+                        .await
+                        .map_err(|e| ToolError::ExecutionFailed(format!("Update check failed: {}", e)))?;
 
-                if output.status.success() {
-                    let output_str = String::from_utf8_lossy(&output.stdout);
-                    Some(Self::parse_latest_version_from_output(&output_str))
+                    if output.status.success() {
+                        let output_str = String::from_utf8_lossy(&output.stdout);
+                        Some(Self::parse_latest_version_from_output(&output_str))
+                    } else {
+                        warn!("Update check command failed for {}", tool_config.id);
+                        None
+                    }
                 } else {
-                    warn!("Update check command failed for {}", tool_config.id);
                     None
                 }
             } else {

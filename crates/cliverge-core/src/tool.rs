@@ -608,18 +608,21 @@ impl ToolManager {
         }
 
         // Try self-update first if available
-        if let Some(update_cmd) = &tool_config.update_check {
-            let self_update_cmd: Vec<String> = update_cmd.iter()
-                .map(|s| if s == "--check-only" { "--update".to_string() } else { s.clone() })
-                .collect();
+        if let Some(update_check_configs) = &tool_config.update_check {
+            let platform = std::env::consts::OS;
+            if let Some(update_cmd) = update_check_configs.get(platform) {
+                let self_update_cmd: Vec<String> = update_cmd.iter()
+                    .map(|s| if s == "--check-only" { "--update".to_string() } else { s.clone() })
+                    .collect();
 
-            match self.execute_install_command(&self_update_cmd).await {
-                Ok(_) => {
-                    debug!("Tool {} updated via self-update", tool_id);
-                    return Ok(());
-                }
-                Err(e) => {
-                    warn!("Self-update failed for {}: {}, trying package manager", tool_id, e);
+                match self.execute_install_command(&self_update_cmd).await {
+                    Ok(_) => {
+                        debug!("Tool {} updated via self-update", tool_id);
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        warn!("Self-update failed for {}: {}, trying package manager", tool_id, e);
+                    }
                 }
             }
         }
@@ -731,11 +734,16 @@ impl ToolManager {
     }
 
     async fn is_tool_installed(&self, tool_config: &ToolConfig) -> bool {
-        let mut cmd = Self::create_hidden_command(&tool_config.command, &tool_config.version_check);
-        
-        match cmd.output().await {
-            Ok(output) => output.status.success(),
-            Err(_) => false,
+        let platform = std::env::consts::OS;
+        if let Some(version_check_args) = tool_config.version_check.get(platform) {
+            let mut cmd = Self::create_hidden_command(&tool_config.command, version_check_args);
+            
+            match cmd.output().await {
+                Ok(output) => output.status.success(),
+                Err(_) => false,
+            }
+        } else {
+            false
         }
     }
 
