@@ -170,32 +170,16 @@ impl ToolManager {
             return Ok(());
         }
 
-        match install_config.method.as_str() {
-            "npm" | "brew" | "pip" => {
-                if let Some(command) = &install_config.command {
-                    self.execute_install_command(command).await?;
-                } else {
-                    return Err(ToolError::ConfigError("Install command not specified".to_string()));
-                }
-            }
-            "script" => {
-                if let Some(url) = &install_config.url {
-                    self.execute_install_script(url).await?;
-                } else {
-                    return Err(ToolError::ConfigError("Install script URL not specified".to_string()));
-                }
-            }
-            _ => {
-                return Err(ToolError::NotSupported(format!("Install method {} not supported", install_config.method)));
-            }
+        // Execute installation command
+        if let Some(command) = &install_config.command {
+            self.execute_install_command(command).await?;
+        } else {
+            // Fallback: construct command from method and package_name
+            let command = self.construct_install_command(&install_config)?;
+            self.execute_install_command(&command).await?;
         }
 
-        // Verify installation
-        if !self.is_tool_installed(&tool_config).await {
-            return Err(ToolError::InstallationFailed(format!("Installation verification failed for {}", tool_id)));
-        }
-
-        // Clear status cache to force refresh
+        // Clear status cache to force re-check
         if let Ok(mut cache) = self.status_cache.lock() {
             cache.remove(tool_id);
         }
@@ -204,11 +188,132 @@ impl ToolManager {
         Ok(())
     }
 
+    /// Construct install command from method and package name
+    fn construct_install_command(&self, install_config: &crate::InstallMethod) -> Result<Vec<String>, ToolError> {
+        match install_config.method.as_str() {
+            "npm" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["npm".to_string(), "install".to_string(), "-g".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("npm install requires package_name".to_string()))
+                }
+            }
+            "brew" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["brew".to_string(), "install".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("brew install requires package_name".to_string()))
+                }
+            }
+            "pip" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["pip".to_string(), "install".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("pip install requires package_name".to_string()))
+                }
+            }
+            "apt" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["sudo".to_string(), "apt".to_string(), "install".to_string(), "-y".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("apt install requires package_name".to_string()))
+                }
+            }
+            "yum" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["sudo".to_string(), "yum".to_string(), "install".to_string(), "-y".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("yum install requires package_name".to_string()))
+                }
+            }
+            "dnf" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["sudo".to_string(), "dnf".to_string(), "install".to_string(), "-y".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("dnf install requires package_name".to_string()))
+                }
+            }
+            "pacman" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["sudo".to_string(), "pacman".to_string(), "-S".to_string(), "--noconfirm".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("pacman install requires package_name".to_string()))
+                }
+            }
+            "winget" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["winget".to_string(), "install".to_string(), package_name.clone(), "--accept-source-agreements".to_string(), "--accept-package-agreements".to_string()])
+                } else {
+                    Err(ToolError::ConfigError("winget install requires package_name".to_string()))
+                }
+            }
+            "choco" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["choco".to_string(), "install".to_string(), package_name.clone(), "-y".to_string()])
+                } else {
+                    Err(ToolError::ConfigError("choco install requires package_name".to_string()))
+                }
+            }
+            "scoop" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["scoop".to_string(), "install".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("scoop install requires package_name".to_string()))
+                }
+            }
+            "cargo" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["cargo".to_string(), "install".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("cargo install requires package_name".to_string()))
+                }
+            }
+            "go" => {
+                if let Some(package_name) = &install_config.package_name {
+                    Ok(vec!["go".to_string(), "install".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("go install requires package_name".to_string()))
+                }
+            }
+            method => Err(ToolError::NotSupported(format!("Install method '{}' not supported", method)))
+        }
+    }
+
+    /// Execute install command with proper error handling
+    async fn execute_install_command(&self, command: &[String]) -> Result<(), ToolError> {
+        if command.is_empty() {
+            return Err(ToolError::ConfigError("Empty install command".to_string()));
+        }
+
+        debug!("Executing install command: {:?}", command);
+        
+        let mut cmd = Command::new(&command[0]);
+        if command.len() > 1 {
+            cmd.args(&command[1..]);
+        }
+
+        let output = cmd.output().await
+            .map_err(|e| ToolError::ExecutionFailed(format!("Failed to execute command: {}", e)))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            return Err(ToolError::ExecutionFailed(format!(
+                "Install command failed with exit code {}: stdout: {}, stderr: {}", 
+                output.status.code().unwrap_or(-1), 
+                stdout, 
+                stderr
+            )));
+        }
+
+        Ok(())
+    }
+
     /// Uninstall a tool
     pub async fn uninstall_tool(&self, tool_id: &str) -> Result<(), ToolError> {
         debug!("Uninstalling tool: {}", tool_id);
 
-        let (tool_config, install_config) = {
+        let (tool_config, uninstall_config) = {
             let config_manager = self.config_manager.lock().unwrap();
             let tool_config = config_manager
                 .get_tool_config(tool_id)
@@ -216,13 +321,20 @@ impl ToolManager {
                 .clone();
 
             let platform = std::env::consts::OS;
-            let install_config = tool_config
-                .install
-                .get(platform)
-                .ok_or_else(|| ToolError::NotSupported(format!("Platform {} not supported for {}", platform, tool_id)))?
-                .clone();
+            
+            // 首先尝试使用专门的卸载配置
+            let uninstall_config = if let Some(uninstall_configs) = &tool_config.uninstall {
+                uninstall_configs.get(platform).cloned()
+            } else {
+                None
+            };
 
-            (tool_config, install_config)
+            // 如果没有专门的卸载配置，回退到安装配置
+            let uninstall_config = uninstall_config.or_else(|| {
+                tool_config.install.get(platform).cloned()
+            }).ok_or_else(|| ToolError::NotSupported(format!("Platform {} not supported for {}", platform, tool_id)))?;
+
+            (tool_config, uninstall_config)
         };
 
         if !self.is_tool_installed(&tool_config).await {
@@ -230,42 +342,135 @@ impl ToolManager {
             return Ok(());
         }
 
-        // Generate uninstall command based on install method
-        let uninstall_command = match install_config.method.as_str() {
-            "npm" => {
-                if let Some(package_name) = &install_config.package_name {
-                    vec!["npm".to_string(), "uninstall".to_string(), "-g".to_string(), package_name.clone()]
-                } else {
-                    return Err(ToolError::ConfigError("NPM package name not specified".to_string()));
-                }
-            }
-            "brew" => {
-                if let Some(package_name) = &install_config.package_name {
-                    vec!["brew".to_string(), "uninstall".to_string(), package_name.clone()]
-                } else {
-                    return Err(ToolError::ConfigError("Brew formula name not specified".to_string()));
-                }
-            }
-            "pip" => {
-                if let Some(package_name) = &install_config.package_name {
-                    vec!["pip".to_string(), "uninstall".to_string(), "-y".to_string(), package_name.clone()]
-                } else {
-                    return Err(ToolError::ConfigError("Pip package name not specified".to_string()));
-                }
-            }
-            _ => {
-                return Err(ToolError::NotSupported(format!("Uninstall method {} not supported", install_config.method)));
-            }
-        };
+        // Execute uninstall command
+        if let Some(command) = &uninstall_config.command {
+            self.execute_uninstall_command(command).await?;
+        } else {
+            // Fallback: construct command from method and package_name
+            let command = self.construct_uninstall_command(&uninstall_config)?;
+            self.execute_uninstall_command(&command).await?;
+        }
 
-        self.execute_install_command(&uninstall_command).await?;
-
-        // Clear status cache to force refresh
+        // Clear status cache to force re-check
         if let Ok(mut cache) = self.status_cache.lock() {
             cache.remove(tool_id);
         }
 
         debug!("Tool {} uninstalled successfully", tool_id);
+        Ok(())
+    }
+
+    /// Construct uninstall command from method and package name
+    fn construct_uninstall_command(&self, uninstall_config: &crate::InstallMethod) -> Result<Vec<String>, ToolError> {
+        match uninstall_config.method.as_str() {
+            "npm" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["npm".to_string(), "uninstall".to_string(), "-g".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("npm uninstall requires package_name".to_string()))
+                }
+            }
+            "brew" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["brew".to_string(), "uninstall".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("brew uninstall requires package_name".to_string()))
+                }
+            }
+            "pip" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["pip".to_string(), "uninstall".to_string(), "-y".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("pip uninstall requires package_name".to_string()))
+                }
+            }
+            "apt" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["sudo".to_string(), "apt".to_string(), "remove".to_string(), "-y".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("apt remove requires package_name".to_string()))
+                }
+            }
+            "yum" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["sudo".to_string(), "yum".to_string(), "remove".to_string(), "-y".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("yum remove requires package_name".to_string()))
+                }
+            }
+            "dnf" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["sudo".to_string(), "dnf".to_string(), "remove".to_string(), "-y".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("dnf remove requires package_name".to_string()))
+                }
+            }
+            "pacman" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["sudo".to_string(), "pacman".to_string(), "-R".to_string(), "--noconfirm".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("pacman remove requires package_name".to_string()))
+                }
+            }
+            "winget" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["winget".to_string(), "uninstall".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("winget uninstall requires package_name".to_string()))
+                }
+            }
+            "choco" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["choco".to_string(), "uninstall".to_string(), package_name.clone(), "-y".to_string()])
+                } else {
+                    Err(ToolError::ConfigError("choco uninstall requires package_name".to_string()))
+                }
+            }
+            "scoop" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["scoop".to_string(), "uninstall".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("scoop uninstall requires package_name".to_string()))
+                }
+            }
+            "cargo" => {
+                if let Some(package_name) = &uninstall_config.package_name {
+                    Ok(vec!["cargo".to_string(), "uninstall".to_string(), package_name.clone()])
+                } else {
+                    Err(ToolError::ConfigError("cargo uninstall requires package_name".to_string()))
+                }
+            }
+            method => Err(ToolError::NotSupported(format!("Uninstall method '{}' not supported", method)))
+        }
+    }
+
+    /// Execute uninstall command with proper error handling
+    async fn execute_uninstall_command(&self, command: &[String]) -> Result<(), ToolError> {
+        if command.is_empty() {
+            return Err(ToolError::ConfigError("Empty uninstall command".to_string()));
+        }
+
+        debug!("Executing uninstall command: {:?}", command);
+        
+        let mut cmd = Command::new(&command[0]);
+        if command.len() > 1 {
+            cmd.args(&command[1..]);
+        }
+
+        let output = cmd.output().await
+            .map_err(|e| ToolError::ExecutionFailed(format!("Failed to execute command: {}", e)))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            return Err(ToolError::ExecutionFailed(format!(
+                "Uninstall command failed with exit code {}: stdout: {}, stderr: {}", 
+                output.status.code().unwrap_or(-1), 
+                stdout, 
+                stderr
+            )));
+        }
+
         Ok(())
     }
 
@@ -580,24 +785,6 @@ impl ToolManager {
         None
     }
 
-    async fn execute_install_command(&self, command: &[String]) -> Result<(), ToolError> {
-        if command.is_empty() {
-            return Err(ToolError::ConfigError("Empty install command".to_string()));
-        }
-
-        let mut cmd = Self::create_hidden_command(&command[0], &command[1..]);
-        
-        let output = cmd.output()
-            .await
-            .map_err(|e| ToolError::ExecutionFailed(format!("Failed to execute install command: {}", e)))?;
-
-        if !output.status.success() {
-            let error_msg = String::from_utf8_lossy(&output.stderr);
-            return Err(ToolError::InstallationFailed(format!("Install command failed: {}", error_msg)));
-        }
-
-        Ok(())
-    }
 
     async fn execute_install_script(&self, script_url: &str) -> Result<(), ToolError> {
         // For now, we'll use a simple approach with curl + sh
@@ -649,3 +836,4 @@ impl ToolManager {
         std::cmp::Ordering::Equal
     }
 }
+

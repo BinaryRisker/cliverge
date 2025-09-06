@@ -2135,6 +2135,8 @@ impl CLIvergeApp {
                     Some((platform.clone(), install_method))
                 })
                 .collect(),
+            uninstall: None, // TODO: Add uninstall configuration in form
+            update: None,    // TODO: Add update configuration in form
             config_schema: None, // Not editable in form for now
         };
         

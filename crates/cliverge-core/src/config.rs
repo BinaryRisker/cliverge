@@ -49,6 +49,8 @@ pub struct ToolConfig {
     pub version_check: Vec<String>,
     pub update_check: Option<Vec<String>>,
     pub install: HashMap<String, InstallMethod>,
+    pub uninstall: Option<HashMap<String, InstallMethod>>, // 新增卸载配置
+    pub update: Option<HashMap<String, InstallMethod>>,     // 新增更新配置
     pub config_schema: Option<HashMap<String, ConfigField>>,
 }
 
