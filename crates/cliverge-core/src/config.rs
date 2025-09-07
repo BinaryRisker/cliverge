@@ -3,7 +3,14 @@
 use crate::ConfigError;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+// 类型别名以减少复杂度警告
+type PlatformCommands = HashMap<String, Vec<String>>;
+type PlatformMethods = HashMap<String, InstallMethod>;
+type ConfigSchema = HashMap<String, ConfigField>;
+type VersionCheckResult<E> = Result<PlatformCommands, E>;
+type UpdateCheckResult<E> = Result<Option<PlatformCommands>, E>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
@@ -47,13 +54,13 @@ pub struct ToolConfig {
     pub website: String,
     pub command: String,
     #[serde(deserialize_with = "deserialize_version_check")]
-    pub version_check: HashMap<String, Vec<String>>, // 改为多平台支持
+    pub version_check: PlatformCommands, // 改为多平台支持
     #[serde(deserialize_with = "deserialize_update_check", default)]
-    pub update_check: Option<HashMap<String, Vec<String>>>, // 改为多平台支持
-    pub install: HashMap<String, InstallMethod>,
-    pub uninstall: Option<HashMap<String, InstallMethod>>, // 新增卸载配置
-    pub update: Option<HashMap<String, InstallMethod>>,    // 新增更新配置
-    pub config_schema: Option<HashMap<String, ConfigField>>,
+    pub update_check: Option<PlatformCommands>, // 改为多平台支持
+    pub install: PlatformMethods,
+    pub uninstall: Option<PlatformMethods>, // 新增卸载配置
+    pub update: Option<PlatformMethods>,    // 新增更新配置
+    pub config_schema: Option<ConfigSchema>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -174,7 +181,7 @@ impl ConfigManager {
         self.tools_config = tools_config;
     }
 
-    async fn load_app_settings(config_dir: &PathBuf) -> Result<AppSettings, ConfigError> {
+    async fn load_app_settings(config_dir: &Path) -> Result<AppSettings, ConfigError> {
         let settings_path = config_dir.join("settings.json");
 
         if settings_path.exists() {
@@ -185,7 +192,7 @@ impl ConfigManager {
         }
     }
 
-    async fn load_tools_config(config_dir: &PathBuf) -> Result<ToolsConfig, ConfigError> {
+    async fn load_tools_config(config_dir: &Path) -> Result<ToolsConfig, ConfigError> {
         let tools_path = config_dir.join("tools.json");
 
         if tools_path.exists() {
@@ -254,9 +261,7 @@ impl ConfigManager {
 }
 
 // 自定义反序列化函数，支持向后兼容
-fn deserialize_version_check<'de, D>(
-    deserializer: D,
-) -> Result<HashMap<String, Vec<String>>, D::Error>
+fn deserialize_version_check<'de, D>(deserializer: D) -> VersionCheckResult<D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -305,9 +310,7 @@ where
     deserializer.deserialize_any(VersionCheckVisitor)
 }
 
-fn deserialize_update_check<'de, D>(
-    deserializer: D,
-) -> Result<Option<HashMap<String, Vec<String>>>, D::Error>
+fn deserialize_update_check<'de, D>(deserializer: D) -> UpdateCheckResult<D::Error>
 where
     D: serde::Deserializer<'de>,
 {

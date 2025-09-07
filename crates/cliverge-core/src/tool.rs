@@ -15,8 +15,10 @@ use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-// Type aliases for complex types
+// 类型别名以减少复杂度警告
 type StatusCache = Arc<Mutex<HashMap<String, ToolStatus>>>;
+type ToolList = Vec<ToolInfo>;
+type StringVec = Vec<String>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ToolStatus {
@@ -83,7 +85,7 @@ impl ToolManager {
     }
 
     /// Get all tool configs immediately without status checking (non-blocking)
-    pub fn get_all_tools_configs(&self) -> Result<Vec<ToolInfo>, ToolError> {
+    pub fn get_all_tools_configs(&self) -> Result<ToolList, ToolError> {
         let tools_config = {
             let config_manager = self.config_manager.lock().unwrap();
             config_manager.get_tools_config().clone()
@@ -208,7 +210,7 @@ impl ToolManager {
     fn construct_install_command(
         &self,
         install_config: &crate::InstallMethod,
-    ) -> Result<Vec<String>, ToolError> {
+    ) -> Result<StringVec, ToolError> {
         match install_config.method.as_str() {
             "npm" => {
                 if let Some(package_name) = &install_config.package_name {
@@ -475,7 +477,7 @@ impl ToolManager {
     fn construct_uninstall_command(
         &self,
         uninstall_config: &crate::InstallMethod,
-    ) -> Result<Vec<String>, ToolError> {
+    ) -> Result<StringVec, ToolError> {
         match uninstall_config.method.as_str() {
             "npm" => {
                 if let Some(package_name) = &uninstall_config.package_name {

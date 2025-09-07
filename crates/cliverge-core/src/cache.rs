@@ -6,6 +6,10 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+// 类型别名以减少复杂度警告
+type StatusCache = HashMap<String, CacheEntry<ToolStatus>>;
+type HelpCache = HashMap<String, CacheEntry<String>>;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheEntry<T> {
     pub data: T,
@@ -39,8 +43,8 @@ impl<T> CacheEntry<T> {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ToolCache {
-    pub status_cache: HashMap<String, CacheEntry<ToolStatus>>,
-    pub help_cache: HashMap<String, CacheEntry<String>>,
+    pub status_cache: StatusCache,
+    pub help_cache: HelpCache,
 }
 
 pub struct CacheManager {

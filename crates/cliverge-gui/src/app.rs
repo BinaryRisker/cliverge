@@ -8,6 +8,19 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::task::JoinHandle;
 
+// 类型别名以减少复杂度警告
+type BackgroundTasks = Arc<Mutex<Vec<JoinHandle<()>>>>;
+type ToolsCache = Arc<Mutex<Vec<ToolInfo>>>;
+type HelpCache = Arc<Mutex<HashMap<String, String>>>;
+type ProgressSender = Arc<Mutex<Option<tokio::sync::mpsc::UnboundedSender<StatusCheckProgress>>>>;
+type ProgressReceiver =
+    Arc<Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<StatusCheckProgress>>>>;
+type InstallSender = Arc<Mutex<Option<tokio::sync::mpsc::UnboundedSender<InstallProgress>>>>;
+type InstallReceiver = Arc<Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<InstallProgress>>>>;
+type LogEntry = (Instant, String);
+type UpdateConfigMethods = std::collections::HashMap<String, Vec<String>>;
+type LoadResult = Result<cliverge_core::ToolsConfig, Box<dyn std::error::Error>>;
+
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Clone)]
@@ -224,14 +237,13 @@ pub struct CLIvergeApp {
     tool_manager: ToolManager,
     app_state: AppState,
     runtime: Arc<tokio::runtime::Runtime>,
-    background_tasks: Arc<Mutex<Vec<JoinHandle<()>>>>,
-    tools_cache: Arc<Mutex<Vec<ToolInfo>>>,
-    help_cache: Arc<Mutex<HashMap<String, String>>>,
-    progress_sender: Arc<Mutex<Option<tokio::sync::mpsc::UnboundedSender<StatusCheckProgress>>>>,
-    progress_receiver:
-        Arc<Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<StatusCheckProgress>>>>,
-    install_sender: Arc<Mutex<Option<tokio::sync::mpsc::UnboundedSender<InstallProgress>>>>, // 新增此行
-    install_receiver: Arc<Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<InstallProgress>>>>, // 新增此行
+    background_tasks: BackgroundTasks,
+    tools_cache: ToolsCache,
+    help_cache: HelpCache,
+    progress_sender: ProgressSender,
+    progress_receiver: ProgressReceiver,
+    install_sender: InstallSender,
+    install_receiver: InstallReceiver,
     ctx: Option<egui::Context>,
 }
 
@@ -334,8 +346,7 @@ impl CLIvergeApp {
             .join(".cliverge")
     }
 
-    fn load_embedded_tools_config() -> Result<cliverge_core::ToolsConfig, Box<dyn std::error::Error>>
-    {
+    fn load_embedded_tools_config() -> LoadResult {
         let default_config_paths = [
             "./configs/tools.json",
             "../configs/tools.json",
@@ -390,6 +401,7 @@ impl CLIvergeApp {
                 // Create a new runtime for this thread
                 let rt = tokio::runtime::Runtime::new().unwrap();
                 rt.block_on(async {
+                    // This is safe because we're in a blocking context, not async
                     if let Ok(config) = config_manager.lock() {
                         if let Err(e) = config.save().await {
                             tracing::error!("Failed to save settings: {}", e);
@@ -478,6 +490,7 @@ impl CLIvergeApp {
                             // Create a new runtime for this thread
                             let rt = tokio::runtime::Runtime::new().unwrap();
                             rt.block_on(async {
+                                // This is safe because we're in a blocking context, not async
                                 if let Ok(mut cache) = cache_manager_clone.lock() {
                                     cache.set_tool_status(&tool_id_for_cache, status_clone);
                                     if let Err(e) = cache.save().await {
@@ -645,6 +658,7 @@ impl CLIvergeApp {
                         // Create a new runtime for this thread
                         let rt = tokio::runtime::Runtime::new().unwrap();
                         rt.block_on(async {
+                            // This is safe because we're in a blocking context, not async
                             if let Ok(mut cache) = cache_manager_clone.lock() {
                                 cache.set_tool_help(&tool_id_for_cache, help_content_clone);
                                 if let Err(e) = cache.save().await {
@@ -1271,7 +1285,7 @@ impl CLIvergeApp {
         ui.separator();
 
         // 创建合并的日志条目
-        let mut combined_entries: Vec<(Instant, String)> = Vec::new();
+        let mut combined_entries: Vec<LogEntry> = Vec::new();
 
         // 添加状态检查条目
         for progress in &self.app_state.status_progress {
@@ -2484,7 +2498,7 @@ impl CLIvergeApp {
                 })
                 .collect(),
             update_check: {
-                let update_configs: std::collections::HashMap<String, Vec<String>> = form
+                let update_configs: UpdateConfigMethods = form
                     .update_check_methods
                     .iter()
                     .filter_map(|(platform, args)| {
