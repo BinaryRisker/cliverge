@@ -1,0 +1,12 @@
+# Clippy configuration for CLIverge project
+# This file helps manage Clippy lints across the project
+
+# Allow some common patterns that are acceptable in this project
+allowed-scripts = ["Latin"]
+max-trait-bounds = 3
+max-fn-params-bools = 3
+
+# Complexity limits
+cognitive-complexity-threshold = 30
+too-many-arguments-threshold = 7
+type-complexity-threshold = 60

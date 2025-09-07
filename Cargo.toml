@@ -66,3 +66,7 @@ publish-jobs = ["homebrew"]
 create-release = true
 # Whether CI should trigger on pushes to the main branch (in addition to tag pushes)
 pr-run-mode = "plan"
+# Allow overriding release body
+allow-dirty = ["ci"]
+# Custom release notes
+generate-release-notes = true

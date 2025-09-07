@@ -12,7 +12,7 @@ fn setup_minimal_fonts(ctx: &egui::Context) {
     // Use default fonts but with minimal configuration
     // This ensures stability while still benefiting from other optimizations
     let fonts = egui::FontDefinitions::default();
-    
+
     // Keep only essential font sizes to reduce memory usage
     // The actual size reduction comes from other optimizations
     ctx.set_fonts(fonts);
@@ -24,23 +24,23 @@ fn load_icon() -> IconData {
     // Blue-purple gradient background with terminal-like appearance
     let size = 32;
     let mut rgba = Vec::with_capacity(size * size * 4);
-    
+
     for y in 0..size {
         for x in 0..size {
             // Create circular mask
             let dx = x as f32 - 15.5;
             let dy = y as f32 - 15.5;
             let distance = (dx * dx + dy * dy).sqrt();
-            
+
             if distance <= 15.0 {
                 // Inside circle - blue/purple gradient
                 let t = distance / 15.0;
-                let r = (63.0 + t * (139.0 - 63.0)) as u8;  // 63->139 (blue to purple)
+                let r = (63.0 + t * (139.0 - 63.0)) as u8; // 63->139 (blue to purple)
                 let g = (102.0 + t * (92.0 - 102.0)) as u8; // 102->92
                 let b = (241.0 + t * (246.0 - 241.0)) as u8; // 241->246
-                
+
                 // Add terminal window appearance
-                if y >= 8 && y <= 24 && x >= 6 && x <= 26 {
+                if (8..=24).contains(&y) && (6..=26).contains(&x) {
                     // Terminal window area
                     if y <= 11 {
                         // Title bar
@@ -58,7 +58,7 @@ fn load_icon() -> IconData {
             }
         }
     }
-    
+
     IconData {
         rgba,
         width: size as u32,
@@ -73,10 +73,10 @@ fn main() -> Result<(), eframe::Error> {
         // Only enable full logging in debug builds
         eprintln!("CLIverge Debug Mode - Logging enabled");
     }
-    
+
     // Load application icon
     let icon_data = load_icon();
-    
+
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1200.0, 800.0])
@@ -84,7 +84,7 @@ fn main() -> Result<(), eframe::Error> {
             .with_icon(icon_data),
         ..Default::default()
     };
-    
+
     eframe::run_native(
         "CLIverge - AI CLI Tool Manager",
         options,

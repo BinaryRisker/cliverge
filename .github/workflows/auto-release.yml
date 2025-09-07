@@ -1,0 +1,148 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # 检查是否需要发布新版本
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.version_check.outputs.should_release }}
+      new_version: ${{ steps.version_check.outputs.new_version }}
+      changelog: ${{ steps.changelog.outputs.content }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整历史以比较版本
+
+      - name: Get current version
+        id: current_version
+        run: |
+          VERSION=$(grep '^version = ' crates/cliverge-gui/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
+      - name: Get latest release version
+        id: latest_release
+        run: |
+          LATEST=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // "v0.0.0"' || echo "v0.0.0")
+          echo "latest=$LATEST" >> $GITHUB_OUTPUT
+          echo "Latest release: $LATEST"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if version changed
+        id: version_check
+        run: |
+          CURRENT="v${{ steps.current_version.outputs.version }}"
+          LATEST="${{ steps.latest_release.outputs.latest }}"
+          
+          echo "Comparing: $CURRENT vs $LATEST"
+          
+          if [ "$CURRENT" != "$LATEST" ]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "new_version=$CURRENT" >> $GITHUB_OUTPUT
+            echo "Version changed, will create new release: $CURRENT"
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "Version unchanged, skipping release"
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        if: steps.version_check.outputs.should_release == 'true'
+        run: |
+          LATEST_TAG="${{ steps.latest_release.outputs.latest }}"
+          NEW_VERSION="${{ steps.version_check.outputs.new_version }}"
+          
+          echo "Generating changelog from $LATEST_TAG to HEAD..."
+          
+          # 生成变更日志
+          {
+            echo "## What's Changed in $NEW_VERSION"
+            echo ""
+            echo "### 🚀 Features & Improvements"
+            
+            # 获取自上次发布以来的提交
+            if [ "$LATEST_TAG" = "v0.0.0" ]; then
+              # 首次发布，获取所有提交
+              git log --pretty=format:"- %s (%h)" --no-merges HEAD~10..HEAD || git log --pretty=format:"- %s (%h)" --no-merges
+            else
+              # 获取自上次标签以来的提交
+              git log --pretty=format:"- %s (%h)" --no-merges $LATEST_TAG..HEAD 2>/dev/null || {
+                echo "- Initial release of CLIverge"
+                echo "- AI CLI tool management platform with GUI interface"
+                echo "- Cross-platform support (Windows, macOS, Linux)"
+                echo "- One-click install/uninstall for AI tools"
+                echo "- Real-time tool status detection"
+                echo "- Integrated logging system"
+              }
+            fi
+            
+            echo ""
+            echo "### 📦 Installation"
+            echo ""
+            echo "**Shell (Linux/macOS):**"
+            echo "\`\`\`bash"
+            echo "curl -fsSL https://github.com/\${{ github.repository }}/releases/download/$NEW_VERSION/install.sh | sh"
+            echo "\`\`\`"
+            echo ""
+            echo "**PowerShell (Windows):**"
+            echo "\`\`\`powershell"
+            echo "irm https://github.com/\${{ github.repository }}/releases/download/$NEW_VERSION/install.ps1 | iex"
+            echo "\`\`\`"
+            echo ""
+            echo "### 🎯 Downloads"
+            echo ""
+            echo "- **Windows**: Download the \`.msi\` installer or \`.exe\` files"
+            echo "- **macOS**: Download the \`.dmg\` installer or \`.tar.xz\` archive"
+            echo "- **Linux**: Download the \`.deb\`/\`.rpm\` packages or \`.tar.xz\` archive"
+            
+          } > changelog.md
+          
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          cat changelog.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  # 创建标签并触发 cargo-dist 发布流程
+  create-tag-and-release:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
+        run: |
+          NEW_VERSION="${{ needs.check-version.outputs.new_version }}"
+          echo "Creating tag: $NEW_VERSION"
+          
+          git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION
+
+          ${{ needs.check-version.outputs.changelog }}"
+          
+          git push origin "$NEW_VERSION"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for release workflow
+        run: |
+          echo "Tag pushed successfully. The cargo-dist release workflow should start automatically."
+          echo "You can monitor the progress at: https://github.com/${{ github.repository }}/actions"

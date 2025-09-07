@@ -52,7 +52,7 @@ pub struct ToolConfig {
     pub update_check: Option<HashMap<String, Vec<String>>>, // 改为多平台支持
     pub install: HashMap<String, InstallMethod>,
     pub uninstall: Option<HashMap<String, InstallMethod>>, // 新增卸载配置
-    pub update: Option<HashMap<String, InstallMethod>>,     // 新增更新配置
+    pub update: Option<HashMap<String, InstallMethod>>,    // 新增更新配置
     pub config_schema: Option<HashMap<String, ConfigField>>,
 }
 
@@ -119,7 +119,7 @@ impl ConfigManager {
             config_dir: Self::get_config_dir(),
         }
     }
-    
+
     pub async fn load() -> Result<Self, ConfigError> {
         let config_dir = Self::get_config_dir();
         tokio::fs::create_dir_all(&config_dir).await?;
@@ -169,14 +169,14 @@ impl ConfigManager {
     pub fn remove_tool(&mut self, id: &str) {
         self.tools_config.tools.retain(|t| t.id != id);
     }
-    
+
     pub fn set_tools_config(&mut self, tools_config: ToolsConfig) {
         self.tools_config = tools_config;
     }
 
     async fn load_app_settings(config_dir: &PathBuf) -> Result<AppSettings, ConfigError> {
         let settings_path = config_dir.join("settings.json");
-        
+
         if settings_path.exists() {
             let content = tokio::fs::read_to_string(&settings_path).await?;
             Ok(serde_json::from_str(&content)?)
@@ -187,7 +187,7 @@ impl ConfigManager {
 
     async fn load_tools_config(config_dir: &PathBuf) -> Result<ToolsConfig, ConfigError> {
         let tools_path = config_dir.join("tools.json");
-        
+
         if tools_path.exists() {
             let content = tokio::fs::read_to_string(&tools_path).await?;
             Ok(serde_json::from_str(&content)?)
@@ -223,22 +223,22 @@ impl ConfigManager {
         if let Ok(config) = Self::load_embedded_tools_config() {
             return config;
         }
-        
+
         // Fallback to minimal config if embedded config fails
         ToolsConfig {
             version: "1.0".to_string(),
             tools: Vec::new(),
         }
     }
-    
+
     fn load_embedded_tools_config() -> Result<ToolsConfig, ConfigError> {
         // Try to load from configs/tools.json in the project root
         let default_config_paths = [
             "./configs/tools.json",
-            "../configs/tools.json", 
+            "../configs/tools.json",
             "../../configs/tools.json",
         ];
-        
+
         for path in &default_config_paths {
             if let Ok(content) = std::fs::read_to_string(path) {
                 if let Ok(config) = serde_json::from_str::<ToolsConfig>(&content) {
@@ -247,12 +247,16 @@ impl ConfigManager {
                 }
             }
         }
-        Err(ConfigError::NotFound("Default tools config not found".to_string()))
+        Err(ConfigError::NotFound(
+            "Default tools config not found".to_string(),
+        ))
     }
 }
 
 // 自定义反序列化函数，支持向后兼容
-fn deserialize_version_check<'de, D>(deserializer: D) -> Result<HashMap<String, Vec<String>>, D::Error>
+fn deserialize_version_check<'de, D>(
+    deserializer: D,
+) -> Result<HashMap<String, Vec<String>>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -277,7 +281,7 @@ where
             while let Some(item) = seq.next_element::<String>()? {
                 vec.push(item);
             }
-            
+
             let mut map = HashMap::new();
             map.insert("windows".to_string(), vec.clone());
             map.insert("macos".to_string(), vec.clone());
@@ -301,7 +305,9 @@ where
     deserializer.deserialize_any(VersionCheckVisitor)
 }
 
-fn deserialize_update_check<'de, D>(deserializer: D) -> Result<Option<HashMap<String, Vec<String>>>, D::Error>
+fn deserialize_update_check<'de, D>(
+    deserializer: D,
+) -> Result<Option<HashMap<String, Vec<String>>>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -340,11 +346,11 @@ where
             while let Some(item) = seq.next_element::<String>()? {
                 vec.push(item);
             }
-            
+
             if vec.is_empty() {
                 return Ok(None);
             }
-            
+
             let mut map = HashMap::new();
             map.insert("windows".to_string(), vec.clone());
             map.insert("macos".to_string(), vec.clone());
@@ -387,12 +393,21 @@ mod tests {
         }"#;
 
         let config: ToolConfig = serde_json::from_str(old_format).expect("Should parse old format");
-        
+
         // 验证转换后的格式
         assert_eq!(config.version_check.len(), 3);
-        assert_eq!(config.version_check.get("windows"), Some(&vec!["--version".to_string()]));
-        assert_eq!(config.version_check.get("macos"), Some(&vec!["--version".to_string()]));
-        assert_eq!(config.version_check.get("linux"), Some(&vec!["--version".to_string()]));
+        assert_eq!(
+            config.version_check.get("windows"),
+            Some(&vec!["--version".to_string()])
+        );
+        assert_eq!(
+            config.version_check.get("macos"),
+            Some(&vec!["--version".to_string()])
+        );
+        assert_eq!(
+            config.version_check.get("linux"),
+            Some(&vec!["--version".to_string()])
+        );
     }
 
     #[test]
@@ -410,12 +425,15 @@ mod tests {
         }"#;
 
         let config: ToolConfig = serde_json::from_str(old_format).expect("Should parse old format");
-        
+
         // 验证转换后的格式
         assert!(config.update_check.is_some());
         let update_check = config.update_check.unwrap();
         assert_eq!(update_check.len(), 3);
-        assert_eq!(update_check.get("windows"), Some(&vec!["update".to_string(), "--check".to_string()]));
+        assert_eq!(
+            update_check.get("windows"),
+            Some(&vec!["update".to_string(), "--check".to_string()])
+        );
     }
 
     #[test]
@@ -439,13 +457,25 @@ mod tests {
         }"#;
 
         let config: ToolConfig = serde_json::from_str(new_format).expect("Should parse new format");
-        
+
         // 验证新格式保持不变
-        assert_eq!(config.version_check.get("windows"), Some(&vec!["--version".to_string()]));
-        assert_eq!(config.version_check.get("linux"), Some(&vec!["-V".to_string()]));
-        
+        assert_eq!(
+            config.version_check.get("windows"),
+            Some(&vec!["--version".to_string()])
+        );
+        assert_eq!(
+            config.version_check.get("linux"),
+            Some(&vec!["-V".to_string()])
+        );
+
         let update_check = config.update_check.unwrap();
-        assert_eq!(update_check.get("windows"), Some(&vec!["update".to_string(), "--check".to_string()]));
-        assert_eq!(update_check.get("linux"), Some(&vec!["upgrade".to_string()]));
+        assert_eq!(
+            update_check.get("windows"),
+            Some(&vec!["update".to_string(), "--check".to_string()])
+        );
+        assert_eq!(
+            update_check.get("linux"),
+            Some(&vec!["upgrade".to_string()])
+        );
     }
 }

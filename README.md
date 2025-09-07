@@ -217,6 +217,67 @@ Contributions are welcome! Feel free to contribute code, report issues, or sugge
 
 ### How to Contribute
 
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Submit a Pull Request
+
+### 🚀 Automated Release Process
+
+CLIverge uses an automated release system that creates new releases whenever you push changes to the main branch:
+
+#### For Maintainers: How to Release
+
+1. **Update Version**: Use the provided version management scripts
+   ```bash
+   # Linux/macOS
+   ./scripts/bump-version.sh patch   # 0.1.0 -> 0.1.1
+   ./scripts/bump-version.sh minor   # 0.1.0 -> 0.2.0
+   ./scripts/bump-version.sh major   # 0.1.0 -> 1.0.0
+   
+   # Windows
+   .\scripts\bump-version.ps1 patch
+   .\scripts\bump-version.ps1 minor
+   .\scripts\bump-version.ps1 major
+   ```
+
+2. **Commit and Push**: The version change will automatically trigger a release
+   ```bash
+   git add .
+   git commit -m "chore: bump version to v0.1.1"
+   git push origin main
+   ```
+
+3. **Automated Process**: The CI will:
+   - Detect the version change
+   - Create a git tag
+   - Build cross-platform binaries (Windows, macOS, Linux)
+   - Generate installers (MSI, DMG, DEB/RPM)
+   - Create a GitHub Release with download links
+   - Generate changelog from commit history
+
+#### Release Artifacts
+
+Each release automatically includes:
+- **Windows**: `.msi` installer and `.exe` executable
+- **macOS**: `.dmg` installer and `.tar.xz` archive
+- **Linux**: `.deb`/`.rpm` packages and `.tar.xz` archive
+- **Install Scripts**: One-line installation scripts for all platforms
+- **Checksums**: SHA256 checksums for all artifacts
+
+#### Manual Release (if needed)
+
+You can also trigger a release manually:
+```bash
+# Create and push a version tag
+git tag v0.1.1
+git push origin v0.1.1
+
+# Or use GitHub Actions workflow dispatch
+# Go to Actions -> Auto Release -> Run workflow
+```
+
 1. Fork this repository
 2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)

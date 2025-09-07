@@ -223,6 +223,61 @@ cliverge/
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 提交 Pull Request
 
+### 🚀 自动发布流程
+
+CLIverge 使用自动发布系统，每当您向主分支推送更改时都会创建新的发布版本：
+
+#### 维护者：如何发布新版本
+
+1. **更新版本号**：使用提供的版本管理脚本
+   ```bash
+   # Linux/macOS
+   ./scripts/bump-version.sh patch   # 0.1.0 -> 0.1.1
+   ./scripts/bump-version.sh minor   # 0.1.0 -> 0.2.0
+   ./scripts/bump-version.sh major   # 0.1.0 -> 1.0.0
+   
+   # Windows
+   .\scripts\bump-version.ps1 patch
+   .\scripts\bump-version.ps1 minor
+   .\scripts\bump-version.ps1 major
+   ```
+
+2. **提交并推送**：版本更改将自动触发发布
+   ```bash
+   git add .
+   git commit -m "chore: bump version to v0.1.1"
+   git push origin main
+   ```
+
+3. **自动化流程**：CI 将会：
+   - 检测版本变更
+   - 创建 git 标签
+   - 构建跨平台二进制文件 (Windows, macOS, Linux)
+   - 生成安装包 (MSI, DMG, DEB/RPM)
+   - 创建包含下载链接的 GitHub Release
+   - 从提交历史生成变更日志
+
+#### 发布产物
+
+每个发布版本自动包含：
+- **Windows**：`.msi` 安装包和 `.exe` 可执行文件
+- **macOS**：`.dmg` 安装包和 `.tar.xz` 归档文件
+- **Linux**：`.deb`/`.rpm` 包和 `.tar.xz` 归档文件
+- **安装脚本**：所有平台的一行安装脚本
+- **校验和**：所有产物的 SHA256 校验和
+
+#### 手动发布（如需要）
+
+您也可以手动触发发布：
+```bash
+# 创建并推送版本标签
+git tag v0.1.1
+git push origin v0.1.1
+
+# 或使用 GitHub Actions 工作流调度
+# 转到 Actions -> Auto Release -> Run workflow
+```
+
 ### 开发环境设置
 
 ```bash
