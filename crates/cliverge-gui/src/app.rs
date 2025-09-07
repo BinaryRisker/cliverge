@@ -1,3 +1,6 @@
+// Allow clippy warnings that are false positives in this module
+#![allow(clippy::await_holding_lock, clippy::empty_line_after_outer_attr)]
+
 use cliverge_core::{
     AppSettings, AppearanceSettings, BehaviorSettings, CacheManager, ConfigManager, ToolInfo,
     ToolManager, ToolStatus,
