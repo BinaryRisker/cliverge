@@ -9,9 +9,14 @@ use std::sync::{Arc, Mutex};
 use tokio::process::Command;
 use tracing::{debug, warn};
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 // Type aliases for complex types
 type StatusCache = Arc<Mutex<HashMap<String, ToolStatus>>>;
-type ToolsResult = Result<Vec<ToolInfo>, ToolError>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ToolStatus {
@@ -688,11 +693,7 @@ impl ToolManager {
             )));
         }
 
-        let mut cmd = Self::create_hidden_command(&tool_config.command, args);
-
-        let output = cmd.output().await.map_err(|e| {
-            ToolError::ExecutionFailed(format!("Failed to execute {tool_id}: {e}"))
-        })?;
+        let output = Self::execute_hidden_command(&tool_config.command, args).await?;
 
         Ok(output)
     }
@@ -952,43 +953,53 @@ impl ToolManager {
 
     // Private helper methods
 
-    /// Create a command configured for hidden execution on Windows
-    fn create_hidden_command(command: &str, args: &[String]) -> Command {
-        if cfg!(windows) {
-            let mut powershell_args = vec![
-                "-NoProfile".to_string(),
-                "-WindowStyle".to_string(),
-                "Hidden".to_string(),
-                "-Command".to_string(),
-            ];
+    /// Execute command with hidden window on Windows
+    #[cfg(windows)]
+    async fn execute_hidden_command(
+        command: &str,
+        args: &[String],
+    ) -> Result<std::process::Output, ToolError> {
+        // Use std::process::Command with CREATE_NO_WINDOW flag, then convert to async
+        let command_str = format!("{} {}", command, args.join(" "));
 
-            // Construct the full command as a string
-            let full_command = if args.is_empty() {
-                command.to_string()
-            } else {
-                format!("{} {}", command, args.join(" "))
-            };
-            powershell_args.push(full_command);
+        // Use tokio::task::spawn_blocking to run std::process::Command in a blocking context
+        let result = tokio::task::spawn_blocking(move || {
+            let mut cmd = std::process::Command::new("cmd");
+            cmd.args(["/C", &command_str]);
+            cmd.creation_flags(CREATE_NO_WINDOW);
+            cmd.output()
+        })
+        .await;
 
-            let mut cmd = Command::new("powershell.exe");
-            cmd.args(&powershell_args);
-
-            // Use CREATE_NO_WINDOW flag to prevent console window
-            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-            cmd
-        } else {
-            let mut cmd = Command::new(command);
-            cmd.args(args);
-            cmd
+        match result {
+            Ok(Ok(output)) => Ok(output),
+            Ok(Err(e)) => Err(ToolError::ExecutionFailed(format!(
+                "Failed to execute command: {e}"
+            ))),
+            Err(e) => Err(ToolError::ExecutionFailed(format!(
+                "Task execution failed: {e}"
+            ))),
         }
+    }
+
+    /// Execute command normally on non-Windows platforms
+    #[cfg(not(windows))]
+    async fn execute_hidden_command(
+        command: &str,
+        args: &[String],
+    ) -> Result<std::process::Output, ToolError> {
+        let mut cmd = Command::new(command);
+        cmd.args(args);
+
+        cmd.output()
+            .await
+            .map_err(|e| ToolError::ExecutionFailed(format!("Failed to execute command: {e}")))
     }
 
     async fn is_tool_installed(&self, tool_config: &ToolConfig) -> bool {
         let platform = std::env::consts::OS;
         if let Some(version_check_args) = tool_config.version_check.get(platform) {
-            let mut cmd = Self::create_hidden_command(&tool_config.command, version_check_args);
-
-            match cmd.output().await {
+            match Self::execute_hidden_command(&tool_config.command, version_check_args).await {
                 Ok(output) => output.status.success(),
                 Err(_) => false,
             }
@@ -1043,40 +1054,13 @@ impl ToolManager {
         None
     }
 
-    async fn execute_install_script(&self, script_url: &str) -> Result<(), ToolError> {
-        // For now, we'll use a simple approach with curl + sh
-        // In a production environment, you'd want more secure script handling
-        let install_command = format!("curl -fsSL {script_url} | sh");
-
-        let output = Command::new("sh")
-            .args(["-c", &install_command])
-            .output()
-            .await
-            .map_err(|e| {
-                ToolError::ExecutionFailed(format!("Failed to execute install script: {e}"))
-            })?;
-
-        if !output.status.success() {
-            let error_msg = String::from_utf8_lossy(&output.stderr);
-            return Err(ToolError::InstallationFailed(format!(
-                "Install script failed: {error_msg}"
-            )));
-        }
-
-        Ok(())
-    }
-
     /// Execute a tool command directly
     async fn execute_tool_command(
         &self,
         command: &str,
         args: &[String],
     ) -> Result<std::process::Output, ToolError> {
-        let mut cmd = Self::create_hidden_command(command, args);
-
-        cmd.output()
-            .await
-            .map_err(|e| ToolError::ExecutionFailed(format!("Failed to execute command: {e}")))
+        Self::execute_hidden_command(command, args).await
     }
 
     /// Compare two semantic version strings

@@ -1164,10 +1164,7 @@ impl CLIvergeApp {
                             cache.clear_all();
                             self.runtime.block_on(cache.save())
                         } else {
-                            Err(std::io::Error::other(
-                                "Failed to lock cache",
-                            )
-                            .into())
+                            Err(std::io::Error::other("Failed to lock cache").into())
                         };
 
                         // Clear help cache
@@ -2920,21 +2917,21 @@ impl CLIvergeApp {
                     egui::Button::new(save_text),
                 )
                 .clicked()
-                && self.save_tool_from_form() {
-                    self.app_state.show_tool_editor = false;
-                }
+                && self.save_tool_from_form()
+            {
+                self.app_state.show_tool_editor = false;
+            }
 
             if ui.button("❌ Cancel").clicked() {
                 self.app_state.show_tool_editor = false;
             }
 
             // Show delete button only for existing tools
-            if self.app_state.editing_tool_id.is_some()
-                && ui.button("🗑 Delete Tool").clicked() {
-                    // Show confirmation dialog
-                    self.app_state.tool_to_delete = self.app_state.editing_tool_id.clone();
-                    self.app_state.show_delete_confirmation = true;
-                }
+            if self.app_state.editing_tool_id.is_some() && ui.button("🗑 Delete Tool").clicked() {
+                // Show confirmation dialog
+                self.app_state.tool_to_delete = self.app_state.editing_tool_id.clone();
+                self.app_state.show_delete_confirmation = true;
+            }
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("🔄 Reset Form").clicked() {

@@ -37,13 +37,11 @@ impl<T> CacheEntry<T> {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ToolCache {
     pub status_cache: HashMap<String, CacheEntry<ToolStatus>>,
     pub help_cache: HashMap<String, CacheEntry<String>>,
 }
-
 
 pub struct CacheManager {
     cache: ToolCache,

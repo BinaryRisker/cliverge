@@ -252,9 +252,10 @@ impl VersionChecker {
         let current = self.get_current_version(tool_config).await.ok();
         let platform = std::env::consts::OS;
 
-        let install_config = tool_config.install.get(platform).ok_or_else(|| {
-            ToolError::NotSupported(format!("Platform {platform} not supported"))
-        })?;
+        let install_config = tool_config
+            .install
+            .get(platform)
+            .ok_or_else(|| ToolError::NotSupported(format!("Platform {platform} not supported")))?;
 
         let latest = match install_config.method.as_str() {
             "npm" => self.check_npm_version(tool_config).await.ok(),
@@ -393,9 +394,10 @@ impl VersionChecker {
         method: &str,
     ) -> Result<String, ToolError> {
         let platform = std::env::consts::OS;
-        let install_config = tool_config.install.get(platform).ok_or_else(|| {
-            ToolError::NotSupported(format!("Platform {platform} not supported"))
-        })?;
+        let install_config = tool_config
+            .install
+            .get(platform)
+            .ok_or_else(|| ToolError::NotSupported(format!("Platform {platform} not supported")))?;
 
         if install_config.method != method {
             return Err(ToolError::NotSupported(format!(
