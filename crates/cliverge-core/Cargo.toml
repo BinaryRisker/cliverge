@@ -1,7 +1,7 @@
 [package]
 name = "cliverge-core"
-version = "0.1.3"
-edition = "2021"
+version = "0.1.7"
+edition = "2025"
 description = "Core engine for universal CLI tool management"
 
 # Config for 'cargo dist' - this is a library, not for distribution
