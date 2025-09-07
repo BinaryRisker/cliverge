@@ -1,8 +1,15 @@
 [package]
 name = "cliverge"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 description = "Universal CLI Tool Manager"
+repository = "https://github.com/binaryrisker/cliverge"
+license = "MIT OR Apache-2.0"
+authors = ["binaryrisker"]
+homepage = "https://github.com/binaryrisker/cliverge"
+readme = "../../README.md"
+keywords = ["cli", "tool", "manager", "gui", "utility"]
+categories = ["command-line-utilities", "development-tools"]
 
 # Config for 'cargo dist'
 [package.metadata.dist]

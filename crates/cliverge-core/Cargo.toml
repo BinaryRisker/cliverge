@@ -1,8 +1,12 @@
 [package]
 name = "cliverge-core"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 description = "Core engine for universal CLI tool management"
+repository = "https://github.com/binaryrisker/cliverge"
+license = "MIT OR Apache-2.0"
+authors = ["binaryrisker"]
+homepage = "https://github.com/binaryrisker/cliverge"
 
 # Config for 'cargo dist' - this is a library, not for distribution
 [package.metadata.dist]
