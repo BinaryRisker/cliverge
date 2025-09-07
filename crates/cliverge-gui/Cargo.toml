@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 description = "GUI interface for CLIverge"
 
+# Config for 'cargo dist'
+[package.metadata.dist]
+# Enable distribution for this package
+dist = true
+
 # Hide console window on Windows
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["wincon", "winuser", "consoleapi"] }

@@ -3,6 +3,10 @@ name = "cliverge-core"
 version = "0.1.0"
 edition = "2021"
 description = "Core engine and business logic for CLIverge"
+
+# Config for 'cargo dist' - this is a library, not for distribution
+[package.metadata.dist]
+dist = false
 [dependencies]
 tokio = { workspace = true, features = ["process"] }
 serde = { workspace = true }
