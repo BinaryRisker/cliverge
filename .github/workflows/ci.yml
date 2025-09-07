@@ -54,12 +54,13 @@ jobs:
     
     - name: Run tests
       run: |
-        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+        if [ "${{ runner.os }}" = "Linux" ]; then
           # Use virtual display for Ubuntu GUI tests
           xvfb-run -a cargo test --all-features --workspace
         else
           cargo test --all-features --workspace
         fi
+      shell: bash
     
     - name: Check CLI compilation
       run: cargo check --bin cliverge
@@ -100,12 +101,13 @@ jobs:
     
     - name: Build application
       run: |
-        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+        if [ "${{ runner.os }}" = "Linux" ]; then
           # Use virtual display for Ubuntu GUI app build verification
           xvfb-run -a cargo build --bin cliverge --release
         else
           cargo build --bin cliverge --release
         fi
+      shell: bash
     
     # Note: cliverge is a GUI application, so we only test if it builds
     # GUI applications don't typically have --help flags or CLI commands
