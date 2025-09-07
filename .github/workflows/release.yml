@@ -51,15 +51,46 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       val: ${{ steps.plan.outputs.manifest }}
-      tag: ${{ !github.event.pull_request && github.ref_name || '' }}
-      tag-flag: ${{ !github.event.pull_request && format('--tag={0}', github.ref_name) || '' }}
-      publishing: ${{ !github.event.pull_request }}
+      tag: ${{ steps.determine_tag.outputs.tag }}
+      tag-flag: ${{ steps.determine_tag.outputs.tag-flag }}
+      publishing: ${{ steps.determine_tag.outputs.publishing }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          
+      - name: Determine tag and publishing mode
+        id: determine_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 手动触发模式
+            TAG="${{ github.event.inputs.tag }}"
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "tag-flag=--tag=$TAG" >> $GITHUB_OUTPUT
+            echo "publishing=true" >> $GITHUB_OUTPUT
+            echo "Manual dispatch with tag: $TAG"
+          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # 标签推送触发模式
+            TAG="${{ github.ref_name }}"
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "tag-flag=--tag=$TAG" >> $GITHUB_OUTPUT
+            echo "publishing=true" >> $GITHUB_OUTPUT
+            echo "Tag push with tag: $TAG"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            # PR模式
+            echo "tag=" >> $GITHUB_OUTPUT
+            echo "tag-flag=" >> $GITHUB_OUTPUT
+            echo "publishing=false" >> $GITHUB_OUTPUT
+            echo "Pull request mode - no publishing"
+          else
+            # 其他情况
+            echo "tag=" >> $GITHUB_OUTPUT
+            echo "tag-flag=" >> $GITHUB_OUTPUT
+            echo "publishing=false" >> $GITHUB_OUTPUT
+            echo "Unknown trigger mode - no publishing"
+          fi
       - name: Install cargo-dist
         # we specify bash to get pipefail; it guards against the `curl` command
         # failing. otherwise `sh` won't catch that `curl` returned non-0
@@ -67,7 +98,9 @@ jobs:
         run: "curl --proto '=https' --tlsv1.2 -LsSf https://github.com/axodotdev/cargo-dist/releases/download/v0.29.0/cargo-dist-installer.sh | sh"
       - id: plan
         run: |
-          cargo dist plan ${{ !github.event.pull_request && format('--tag={0}', github.ref_name) || '' }} --output-format=json > plan-dist-manifest.json
+          TAG_FLAG="${{ steps.determine_tag.outputs.tag-flag }}"
+          echo "Running cargo dist plan with: $TAG_FLAG"
+          cargo dist plan $TAG_FLAG --output-format=json > plan-dist-manifest.json
           echo "cargo dist ran successfully"
           cat plan-dist-manifest.json
           echo "manifest<<EOF" >> $GITHUB_OUTPUT
