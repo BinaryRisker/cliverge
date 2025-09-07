@@ -204,7 +204,7 @@ jobs:
           body: |
             ## What's Changed
             
-            This release includes both CLI and GUI versions of CLIverge - the AI CLI tool manager.
+            This release includes CLIverge - the universal CLI tool manager.
             
             ### Downloads
             

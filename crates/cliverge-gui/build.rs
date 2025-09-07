@@ -11,7 +11,7 @@ fn main() {
         // Set basic application information
         res.set_icon("assets/app_icon.ico")
             .set("ProductName", "CLIverge")
-            .set("FileDescription", "AI CLI Tool Manager")
+            .set("FileDescription", "Universal CLI Tool Manager")
             .set("CompanyName", "CLIverge Team")
             .set("LegalCopyright", "Copyright (C) 2024 CLIverge Team")
             .set("FileVersion", env!("CARGO_PKG_VERSION"))
@@ -22,7 +22,7 @@ fn main() {
             println!("cargo:warning=Icon file not found, skipping icon resource");
             res = winres::WindowsResource::new();
             res.set("ProductName", "CLIverge")
-                .set("FileDescription", "AI CLI Tool Manager")
+                .set("FileDescription", "Universal CLI Tool Manager")
                 .set("CompanyName", "CLIverge Team")
                 .set("LegalCopyright", "Copyright (C) 2024 CLIverge Team")
                 .set("FileVersion", env!("CARGO_PKG_VERSION"))

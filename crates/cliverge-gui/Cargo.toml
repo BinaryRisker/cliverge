@@ -2,7 +2,7 @@
 name = "cliverge"
 version = "0.1.2"
 edition = "2021"
-description = "GUI interface for CLIverge"
+description = "Universal CLI Tool Manager"
 
 # Config for 'cargo dist'
 [package.metadata.dist]

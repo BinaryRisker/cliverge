@@ -81,9 +81,9 @@ jobs:
               # 获取自上次标签以来的提交
               git log --pretty=format:"- %s (%h)" --no-merges $LATEST_TAG..HEAD 2>/dev/null || {
                 echo "- Initial release of CLIverge"
-                echo "- AI CLI tool management platform with GUI interface"
+                echo "- Universal CLI tool management platform with GUI interface"
                 echo "- Cross-platform support (Windows, macOS, Linux)"
-                echo "- One-click install/uninstall for AI tools"
+                echo "- One-click install/uninstall for various CLI tools"
                 echo "- Real-time tool status detection"
                 echo "- Integrated logging system"
               }

@@ -1,4 +1,4 @@
-# CLIverge - AI CLI Tool Manager
+# CLIverge - Universal CLI Tool Manager
 
 <p align="center">
   <strong>Lightweight • Visual • Cross-Platform</strong>
@@ -22,12 +22,13 @@
 
 ## 📖 About CLIverge
 
-**CLIverge** is a lightweight desktop AI tool management platform designed to simplify the installation, management, and usage of AI command-line tools. Through an intuitive GUI interface, users can easily manage various AI development tools without memorizing complex command-line operations.
+**CLIverge** is a lightweight desktop CLI tool management platform designed to simplify the installation, management, and usage of command-line tools across all platforms. Through an intuitive GUI interface, users can easily manage various development tools, DevOps utilities, system tools, multimedia tools, and more without memorizing complex command-line operations.
 
 ### Core Concept
 
 - **CLI** + **verge** (convergence) = **CLIverge**
 - A unified management solution that converges various CLI tools into one platform
+- Support for tools across all categories: development, system administration, DevOps, multimedia, and more
 
 ## ✨ Features
 
@@ -51,19 +52,54 @@
 - 🚧 **Tool Configuration Management** - Visual configuration of tool parameters
 - 🚧 **Integrated Terminal** - Built-in terminal emulator
 
-## 🛠 Supported Tools
+## 🔧 Supported Tools
 
-Currently supports management of the following AI command-line tools:
+CLIverge supports management of command-line tools across multiple categories:
 
+### 🤖 AI & Machine Learning
 | Tool Name | Description | Status |
-|-----------|-------------|---------|
+|-----------|-------------|-------|
 | **Claude Code CLI** | Anthropic Claude AI code assistant | ✅ Full Support |
 | **Gemini CLI** | Google Gemini multimodal AI assistant | ✅ Full Support |
 | **Qwen Code CLI** | Alibaba Cloud Qwen code version | ✅ Basic Support |
 | **OpenAI CLI** | Official OpenAI command-line tool | ✅ Basic Support |
+
+### 💻 Development Tools
+| Tool Name | Description | Status |
+|-----------|-------------|-------|
 | **Cursor CLI** | Cursor editor command-line tool | ✅ Basic Support |
 | **OpenCode** | Open-source code generation tool | ✅ Basic Support |
+| **Git** | Distributed version control system | 🔄 Planned |
+| **Node.js/npm** | JavaScript runtime and package manager | 🔄 Planned |
+| **Python/pip** | Python interpreter and package manager | 🔄 Planned |
+
+### ⚙️ DevOps & System Tools
+| Tool Name | Description | Status |
+|-----------|-------------|-------|
+| **Docker** | Container platform | 🔄 Planned |
+| **kubectl** | Kubernetes command-line tool | 🔄 Planned |
+| **Terraform** | Infrastructure as code tool | 🔄 Planned |
+| **Ansible** | Automation and configuration management | 🔄 Planned |
+
+### 📦 Package Managers
+| Tool Name | Description | Status |
+|-----------|-------------|-------|
+| **Homebrew** | macOS package manager | 🔄 Planned |
+| **Chocolatey** | Windows package manager | 🔄 Planned |
+| **Cargo** | Rust package manager | 🔄 Planned |
+| **Composer** | PHP dependency manager | 🔄 Planned |
+
+### 📊 Data & Workflow Tools
+| Tool Name | Description | Status |
+|-----------|-------------|-------|
 | **iFlow CLI** | Intelligent workflow automation tool | ✅ Basic Support |
+| **jq** | JSON processor | 🔄 Planned |
+| **curl** | Data transfer tool | 🔄 Planned |
+| **wget** | Web file retrieval tool | 🔄 Planned |
+
+*✅ Full Support: Complete install/uninstall/version management*  
+*✅ Basic Support: Basic install/version detection*  
+*🔄 Planned: Future support planned*
 
 ## 🚀 Quick Start
 
@@ -121,7 +157,7 @@ cargo run --profile release-min -p cliverge
 ### Usage Guide
 
 1. **Launch Application**: Double-click the executable or run from terminal
-2. **Browse Tools**: Left panel displays all available AI tools
+2. **Browse Tools**: Left panel displays all available CLI tools
 3. **Check Status**: Automatically detects each tool's installation status
 4. **Install Tools**: Click "Install" button for one-click installation
 5. **Manage Configuration**: Configure tool parameters in Settings
@@ -200,7 +236,7 @@ cliverge/
 ### Medium-term Goals (1 month)
 
 - [ ] Integrate terminal emulator
-- [ ] Support more AI tools
+- [ ] Support more CLI tools across different categories
 - [ ] Implement tool usage statistics
 - [ ] Add tool recommendation features
 
@@ -323,7 +359,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Egui](https://github.com/emilk/egui) - Excellent immediate mode GUI framework
 - [Tokio](https://tokio.rs/) - Powerful async runtime
-- All AI tool developers
+- All CLI tool developers and the open-source community
 
 ## 📞 Contact
 

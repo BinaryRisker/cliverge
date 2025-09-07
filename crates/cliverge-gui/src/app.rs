@@ -710,7 +710,7 @@ impl CLIvergeApp {
     }
 
     fn render_tool_list(&mut self, ui: &mut egui::Ui) {
-        ui.heading("AI CLI Tools");
+        ui.heading("CLI Tools");
         ui.separator();
 
         // Search controls
@@ -1887,13 +1887,13 @@ impl CLIvergeApp {
             ui.label(format!("Version: {VERSION}"));
             ui.add_space(10.0);
 
-            ui.label("CLIverge is a lightweight AI CLI tool manager that simplifies");
-            ui.label("the installation and management of various AI development tools.");
+            ui.label("CLIverge is a lightweight CLI tool manager that simplifies");
+            ui.label("the installation and management of various CLI development tools.");
             ui.add_space(20.0);
 
             ui.group(|ui| {
                 ui.label("📋 Key Features:");
-                ui.label("• One-click installation of AI development tools");
+                ui.label("• One-click installation of CLI development tools");
                 ui.label("• Real-time status monitoring with caching");
                 ui.label("• Version checking and updates");
                 ui.label("• Help documentation display");
@@ -2999,7 +2999,7 @@ impl eframe::App for CLIvergeApp {
         // Top menu bar
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading("🚀 CLIverge - AI CLI Tool Manager");
+                ui.heading("🚀 CLIverge - Universal CLI Tool Manager");
 
                 ui.separator();
 

@@ -80,13 +80,13 @@ fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1200.0, 800.0])
-            .with_title("CLIverge - AI CLI Tool Manager")
+            .with_title("CLIverge - Universal CLI Tool Manager")
             .with_icon(icon_data),
         ..Default::default()
     };
 
     eframe::run_native(
-        "CLIverge - AI CLI Tool Manager",
+        "CLIverge - Universal CLI Tool Manager",
         options,
         Box::new(|cc| {
             // Setup minimal fonts to reduce binary size
