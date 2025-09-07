@@ -1,6 +1,6 @@
 [package]
 name = "cliverge"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 description = "Universal CLI Tool Manager"
 repository = "https://github.com/binaryrisker/cliverge"
@@ -15,6 +15,9 @@ categories = ["command-line-utilities", "development-tools"]
 [package.metadata.dist]
 # Enable distribution for this package
 dist = true
+# WiX GUIDs for Windows MSI installer
+upgrade-guid = "2F9A5C8D-1E4B-4A7C-9F6E-3D2B8A5C7E9F"
+path-guid = "7E9F2A5C-4B8D-1C7E-6F9A-5C8D3E2B7F1A"
 
 # Hide console window on Windows
 [target.'cfg(windows)'.dependencies]
